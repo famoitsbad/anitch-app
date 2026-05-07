@@ -7,8 +7,6 @@ import Log from './pages/Log'
 import History from './pages/History'
 import Insights from './pages/Insights'
 import Profile from './pages/Profile'
-import Landing from './pages/Landing'
-import Onboarding from './pages/Onboarding'
 import BottomNav from './components/BottomNav'
 import { LOGO_BASE64 } from './lib/logo'
 
@@ -33,55 +31,9 @@ function SplashScreen() {
 }
 
 function AppInner() {
-  const { user, loading, lang } = useApp()
-  // Track what screen to show for non-logged-in users
-  // 'landing' | 'auth-login' | 'auth-signup' | 'onboarding'
-  const [screen, setScreen] = useState(() => {
-    const visited = localStorage.getItem('anitch_visited')
-    return visited ? 'auth-login' : 'landing'
-  })
-  const [showOnboarding, setShowOnboarding] = useState(false)
-
+  const { user, loading } = useApp()
   if (loading) return <SplashScreen />
-
-  if (!user) {
-    if (screen === 'landing') {
-      return (
-        <Landing
-          onGetStarted={() => {
-            localStorage.setItem('anitch_visited', 'true')
-            setScreen('auth-signup')
-          }}
-          onSignIn={() => {
-            localStorage.setItem('anitch_visited', 'true')
-            setScreen('auth-login')
-          }}
-        />
-      )
-    }
-    return <Auth defaultMode={screen === 'auth-signup' ? 'signup' : 'login'} />
-  }
-
-  // New user — show onboarding after first login
-  if (showOnboarding) {
-    return (
-      <Onboarding
-        lang={lang}
-        onComplete={() => {
-          localStorage.setItem('anitch_onboarded', 'true')
-          setShowOnboarding(false)
-        }}
-      />
-    )
-  }
-
-  // Check if first time login → show onboarding
-  useEffect(() => {
-    if (user && !localStorage.getItem('anitch_onboarded')) {
-      setShowOnboarding(true)
-    }
-  }, [user])
-
+  if (!user) return <Auth />
   return (
     <BrowserRouter>
       <div style={{ background:'#F9F9FB', minHeight:'100vh', maxWidth:'500px', margin:'0 auto', position:'relative' }}>
