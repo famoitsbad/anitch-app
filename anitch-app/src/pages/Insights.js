@@ -135,7 +135,7 @@ export default function Insights() {
 
   return (
     <div style={{ background: th.lightGrey, minHeight: '100vh', fontFamily: "'Lato',sans-serif" }}>
-      <div style={{ background: th.green, padding: '14px 20px 20px' }}>
+      <div style={{ background: th.green, padding: 'env(safe-area-inset-top, 14px) 20px 20px', paddingTop: 'max(14px, env(safe-area-inset-top))' }}>
         <img src={LOGO_BASE64} alt="anitch" style={{ height: '22px', width: 'auto', marginBottom: '12px' }} />
         <div style={{ fontSize: '22px', fontWeight: '700', color: 'white', marginBottom: '8px' }}>{t.insights.title}</div>
         <div style={{ fontSize: '11px', color: 'rgba(255,255,255,0.75)', lineHeight: '1.5', background: 'rgba(0,0,0,0.15)', borderRadius: '6px', padding: '8px 12px', border: '1px solid rgba(255,255,255,0.15)' }}>{disclaimer}</div>

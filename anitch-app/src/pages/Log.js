@@ -126,7 +126,7 @@ export default function Log() {
     <div style={{ background: th.lightGrey, minHeight: '100vh', fontFamily: "'Lato',sans-serif" }}
       onMouseMove={handleMouseMove} onMouseUp={handleMouseUp} onMouseLeave={handleMouseUp}>
       {/* Header */}
-      <div style={{ background: th.green, padding: '14px 20px 24px' }}>
+      <div style={{ background: th.green, padding: 'env(safe-area-inset-top, 14px) 20px 24px', paddingTop: 'max(14px, env(safe-area-inset-top))' }}>
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '12px' }}>
           <img src={LOGO_BASE64} alt="anitch" style={{ height: '22px', width: 'auto' }} />
           <div style={{ fontSize: '11px', color: 'rgba(255,255,255,0.6)' }}>{new Date().toLocaleDateString(isZh ? 'zh-TW' : 'en-GB', { day: 'numeric', month: 'short', year: 'numeric' })}</div>

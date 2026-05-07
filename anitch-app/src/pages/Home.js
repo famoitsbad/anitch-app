@@ -102,7 +102,7 @@ export default function Home() {
   return (
     <div style={{ background: th.lightGrey, minHeight: '100vh', fontFamily: "'Lato',sans-serif", paddingBottom: '100px' }}>
       {/* Header */}
-      <div style={{ background: th.green, padding: '14px 20px 20px', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+      <div style={{ background: th.green, padding: 'env(safe-area-inset-top, 14px) 20px 20px', paddingTop: 'max(14px, env(safe-area-inset-top))', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
         <img src={LOGO_BASE64} alt="anitch" style={{ height: '24px', width: 'auto' }} />
         <div style={{ width: '34px', height: '34px', borderRadius: '50%', background: 'rgba(255,255,255,0.2)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '14px', fontWeight: '700', color: 'white', border: '2px solid rgba(255,255,255,0.4)' }}>
           {name ? name[0].toUpperCase() : 'A'}

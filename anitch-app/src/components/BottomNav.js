@@ -48,7 +48,7 @@ const s = {
     backdropFilter:'blur(12px)',
     borderTop:`1px solid ${theme.border}`,
     display:'flex',
-    padding:'8px 0 env(safe-area-inset-bottom,10px)',
+    padding:'8px 0 env(safe-area-inset-bottom, 12px)',
     zIndex:100,
     maxWidth:'500px',
     margin:'0 auto',
