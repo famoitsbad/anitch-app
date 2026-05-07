@@ -12,9 +12,9 @@ const DURATIONS_EN = ['Less than 1 year','1–3 years','3–5 years','5–10 yea
 const DURATIONS_ZH = ['少於1年','1–3年','3–5年','5–10年','10年以上']
 const ANITCH_PRODUCTS = ['Barrier Rescue Balm','Barrier Restore Face Cream','Barrier Repair Body Cream']
 
-export default function Auth() {
+export default function Auth({ defaultMode = 'login' }) {
   const { t, lang, switchLang } = useApp()
-  const [mode, setMode] = useState('login')
+  const [mode, setMode] = useState(defaultMode)
   const [step, setStep] = useState(1)
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
