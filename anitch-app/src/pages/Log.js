@@ -107,6 +107,8 @@ export default function Log() {
   const sevColor = severity <= 3 ? th.green : severity <= 6 ? th.orange : '#C0392B'
 
   const card = { background: th.white, borderRadius: '12px', padding: '16px', marginBottom: '12px', boxShadow: `0 1px 4px ${th.shadow}`, border: `1px solid ${th.border}` }
+  // Body map card always white for medical clarity
+  const bodyCard = { background: '#FFFFFF', borderRadius: '12px', padding: '16px', marginBottom: '12px', boxShadow: `0 1px 4px ${th.shadow}`, border: '1px solid #E8E8E8' }
   const cardLabel = { fontSize: '10px', fontWeight: '700', letterSpacing: '0.12em', textTransform: 'uppercase', color: th.textMuted, marginBottom: '12px', display: 'block' }
 
   if (saved) return (
@@ -149,17 +151,20 @@ export default function Log() {
           <div style={{ fontSize: '12px', color: th.textMuted }}>{t.log.sevDesc[severity]}</div>
         </div>
 
-        {/* Body Map */}
-        <div style={card}>
-          <span style={cardLabel}>🫀 {t.log.bodyMap}</span>
-          <div style={{ fontSize: '11px', color: th.textMuted, marginBottom: '12px' }}>{t.log.bodyMapSub}</div>
+        {/* Body Map — always white for medical clarity */}
+        <div style={bodyCard}>
+          <span style={{...cardLabel, color: '#888888'}}>🫀 {t.log.bodyMap}</span>
+          <div style={{ fontSize: '11px', color: '#888888', marginBottom: '12px' }}>{t.log.bodyMapSub}</div>
           <div style={{ display: 'flex', gap: '14px', alignItems: 'flex-start' }}>
-            <svg viewBox="0 0 100 220" style={{ width: '120px', flexShrink: 0 }}>
+            <svg viewBox="0 0 100 220" style={{ width: '120px', flexShrink: 0, background: 'white', borderRadius: '8px', padding: '4px' }}>
               {ZONE_MAP.map(z => {
                 const isSelected = !!zones[z.key]
                 const fill = zones[z.key] ? ZONE_COLORS[zones[z.key]] : th.lightGrey
                 const stroke = zones[z.key] ? ZONE_COLORS[zones[z.key]] : th.border
-                const props = { fill, stroke, strokeWidth: isSelected ? 2 : 1.5, onClick: () => toggleZone(z.key), style: { cursor: 'pointer' } }
+                // Body map always uses light colors for medical clarity
+                const lightFill = zones[z.key] ? ZONE_COLORS[zones[z.key]] : '#F5F5F5'
+                const lightStroke = zones[z.key] ? ZONE_COLORS[zones[z.key]] : '#CCCCCC'
+                const props = { fill: lightFill, stroke: lightStroke, strokeWidth: isSelected ? 2 : 1.5, onClick: () => toggleZone(z.key), style: { cursor: 'pointer' } }
                 return z.type === 'e' ? (
                   <g key={z.key}>
                     <ellipse {...props} cx={z.cx} cy={z.cy} rx={z.rx} ry={z.ry} />
@@ -173,7 +178,7 @@ export default function Log() {
                 <div key={m} style={{ display: 'flex', alignItems: 'center', gap: '8px', padding: '6px 10px', borderRadius: '6px', border: `1.5px solid ${zoneMode === m ? ZONE_COLORS[m] : 'transparent'}`, background: zoneMode === m ? th.lightGrey : 'transparent', cursor: 'pointer', marginBottom: '6px' }}
                   onClick={() => setZoneMode(m)}>
                   <div style={{ width: '10px', height: '10px', borderRadius: '2px', background: ZONE_COLORS[m], flexShrink: 0 }} />
-                  <span style={{ fontSize: '11px', color: th.textSecondary }}>{label}</span>
+                  <span style={{ fontSize: '11px', color: '#3D3D3D' }}>{label}</span>
                 </div>
               ))}
               {Object.keys(zones).length > 0 && (
