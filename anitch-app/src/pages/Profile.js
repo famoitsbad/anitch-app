@@ -290,11 +290,11 @@ export default function Profile() {
             {isZh ? 'Anitch® 是一個以科學為基礎的濕疹護膚品牌，致力於改善濕疹患者的生活質量。' : 'Anitch® is a science-driven eczema skincare brand dedicated to improving the lives of those with eczema-prone skin.'}
           </div>
           <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', marginBottom: '16px' }}>
-            <a href="https://www.anitch.com.au" target="_blank" rel="noopener noreferrer" style={{ display: 'block', padding: '10px 16px', background: th.greenLight, color: th.green, borderRadius: '8px', fontSize: '13px', fontWeight: '700', textDecoration: 'none', border: `1px solid ${th.greenSoft}` }}>
+            <a href="https://www.anitch.com/zh" target="_blank" rel="noopener noreferrer" style={{ display: 'block', padding: '10px 16px', background: th.greenLight, color: th.green, borderRadius: '8px', fontSize: '13px', fontWeight: '700', textDecoration: 'none', border: `1px solid ${th.greenSoft}` }}>
               🌐 {isZh ? '官方網站' : 'Official Website'}
             </a>
-            <a href="https://www.instagram.com/AnitchEczemaCare" target="_blank" rel="noopener noreferrer" style={{ display: 'block', padding: '10px 16px', background: th.greenLight, color: th.green, borderRadius: '8px', fontSize: '13px', fontWeight: '700', textDecoration: 'none', border: `1px solid ${th.greenSoft}` }}>
-              📸 @AnitchEczemaCare
+            <a href="https://www.instagram.com/anitch.hk/" target="_blank" rel="noopener noreferrer" style={{ display: 'block', padding: '10px 16px', background: th.greenLight, color: th.green, borderRadius: '8px', fontSize: '13px', fontWeight: '700', textDecoration: 'none', border: `1px solid ${th.greenSoft}` }}>
+              📸 @anitch.hk
             </a>
           </div>
           <div style={{ fontSize: '11px', color: th.textLight }}>Eczema Diary v1.0 · © 2026 Anitch®</div>
