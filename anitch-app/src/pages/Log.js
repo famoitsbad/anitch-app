@@ -27,7 +27,7 @@ const THANK_YOU_EN = ["Thank you for checking in today 🌿","Small daily notes 
 const THANK_YOU_ZH = ["感謝您今天的記錄 🌿","每天的小記錄，慢慢揭開皮膚的規律。","您正在一步一步地照顧自己。","您的皮膚旅程需要耐心與溫柔。","持續追蹤有助於您更好地了解皮膚狀況。","每一筆記錄都讓您更了解自己的皮膚。","今天您為自己而來——這很重要。🌱"]
 
 export default function Log() {
-  const { user, t, th, lang } = useApp()
+  const { user, t, th, lang, darkMode } = useApp()
   const navigate = useNavigate()
   const location = useLocation()
   const existingEntry = location.state?.existingEntry || null
@@ -107,8 +107,8 @@ export default function Log() {
   const sevColor = severity <= 3 ? th.green : severity <= 6 ? th.orange : '#C0392B'
 
   const card = { background: th.white, borderRadius: '12px', padding: '16px', marginBottom: '12px', boxShadow: `0 1px 4px ${th.shadow}`, border: `1px solid ${th.border}` }
-  // Body map card always white for medical clarity
-  const bodyCard = { background: '#FFFFFF', borderRadius: '12px', padding: '16px', marginBottom: '12px', boxShadow: `0 1px 4px ${th.shadow}`, border: '1px solid #E8E8E8' }
+  // Body map card uses theme (dark mode compatible)
+  const bodyCard = { background: th.white, borderRadius: '12px', padding: '16px', marginBottom: '12px', boxShadow: `0 1px 4px ${th.shadow}`, border: `1px solid ${th.border}` }
   const cardLabel = { fontSize: '10px', fontWeight: '700', letterSpacing: '0.12em', textTransform: 'uppercase', color: th.textMuted, marginBottom: '12px', display: 'block' }
 
   if (saved) return (
@@ -153,18 +153,18 @@ export default function Log() {
 
         {/* Body Map — always white for medical clarity */}
         <div style={bodyCard}>
-          <span style={{...cardLabel, color: '#888888'}}>🫀 {t.log.bodyMap}</span>
-          <div style={{ fontSize: '11px', color: '#888888', marginBottom: '12px' }}>{t.log.bodyMapSub}</div>
+          <span style={cardLabel}>🫀 {t.log.bodyMap}</span>
+          <div style={{ fontSize: '11px', color: th.textMuted, marginBottom: '12px' }}>{t.log.bodyMapSub}</div>
           <div style={{ display: 'flex', gap: '14px', alignItems: 'flex-start' }}>
-            <svg viewBox="0 0 100 220" style={{ width: '120px', flexShrink: 0, background: 'white', borderRadius: '8px', padding: '4px' }}>
+            <svg viewBox="0 0 100 220" style={{ width: '120px', flexShrink: 0 }}>
               {ZONE_MAP.map(z => {
                 const isSelected = !!zones[z.key]
                 const fill = zones[z.key] ? ZONE_COLORS[zones[z.key]] : th.lightGrey
                 const stroke = zones[z.key] ? ZONE_COLORS[zones[z.key]] : th.border
-                // Body map always uses light colors for medical clarity
-                const lightFill = zones[z.key] ? ZONE_COLORS[zones[z.key]] : '#F5F5F5'
-                const lightStroke = zones[z.key] ? ZONE_COLORS[zones[z.key]] : '#CCCCCC'
-                const props = { fill: lightFill, stroke: lightStroke, strokeWidth: isSelected ? 2 : 1.5, onClick: () => toggleZone(z.key), style: { cursor: 'pointer' } }
+                // Body figure: white fill + white/light stroke in dark mode
+                const zoneFill = zones[z.key] ? ZONE_COLORS[zones[z.key]] : (darkMode ? 'rgba(255,255,255,0.08)' : '#F5F5F5')
+                const zoneStroke = zones[z.key] ? ZONE_COLORS[zones[z.key]] : (darkMode ? 'rgba(255,255,255,0.5)' : '#CCCCCC')
+                const props = { fill: zoneFill, stroke: zoneStroke, strokeWidth: isSelected ? 2.5 : 1.8, onClick: () => toggleZone(z.key), style: { cursor: 'pointer' } }
                 return z.type === 'e' ? (
                   <g key={z.key}>
                     <ellipse {...props} cx={z.cx} cy={z.cy} rx={z.rx} ry={z.ry} />
@@ -178,7 +178,7 @@ export default function Log() {
                 <div key={m} style={{ display: 'flex', alignItems: 'center', gap: '8px', padding: '6px 10px', borderRadius: '6px', border: `1.5px solid ${zoneMode === m ? ZONE_COLORS[m] : 'transparent'}`, background: zoneMode === m ? th.lightGrey : 'transparent', cursor: 'pointer', marginBottom: '6px' }}
                   onClick={() => setZoneMode(m)}>
                   <div style={{ width: '10px', height: '10px', borderRadius: '2px', background: ZONE_COLORS[m], flexShrink: 0 }} />
-                  <span style={{ fontSize: '11px', color: '#3D3D3D' }}>{label}</span>
+                  <span style={{ fontSize: '11px', color: th.textSecondary }}>{label}</span>
                 </div>
               ))}
               {Object.keys(zones).length > 0 && (
