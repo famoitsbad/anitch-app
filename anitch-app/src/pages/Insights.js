@@ -115,13 +115,17 @@ export default function Insights() {
   if (loading) return <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: '100vh', background: '#004B39' }}><img src={LOGO_BASE64} alt="anitch" style={{ height: '28px' }} /></div>
 
   const insights = generateInsights()
-  const avg = entries.length ? (entries.reduce((s, e) => s + e.severity, 0) / entries.length).toFixed(1) : '—'
-  const flares = entries.filter(e => e.severity >= 6).length
+  // Use EASI score if available, otherwise fall back to normalized severity
+  const getScore = (e) => e.easi_score !== undefined && e.easi_score !== null ? e.easi_score : (e.severity / 9 * 72)
+  const avg = entries.length ? (entries.reduce((s, e) => s + getScore(e), 0) / entries.length).toFixed(1) : '—'
+  const avgLabel = entries.some(e => e.easi_score !== undefined) ? `${avg} / 72` : avg
+  const flares = entries.filter(e => e.easi_score !== undefined ? e.easi_score >= 16 : e.severity >= 6).length
   const last14 = Array.from({ length: 14 }, (_, i) => {
     const d = new Date(); d.setDate(d.getDate() - 13 + i)
     const ds = d.toISOString().split('T')[0]
     const entry = entries.find(e => e.date === ds)
-    return { day: t.days[d.getDay()], val: entry?.severity ?? 0, has: !!entry }
+    const val = entry ? (entry.easi_score !== undefined ? entry.easi_score / 72 * 9 : entry.severity) : 0
+    return { day: t.days[d.getDay()], val, has: !!entry }
   })
   const trigCounts = {}
   entries.forEach(e => (e.triggers || []).forEach(tr => { trigCounts[tr] = (trigCounts[tr] || 0) + 1 }))
@@ -153,7 +157,7 @@ export default function Insights() {
           {/* Stats */}
           <div style={{ ...card, display: 'flex', alignItems: 'center' }}>
             {[
-              { val: avg, label: t.insights.avgSeverity, color: th.textPrimary },
+              { val: entries.some(e => e.easi_score !== undefined) ? `${avg}/72` : avg, label: isZh ? '平均EASI分數' : 'Avg EASI Score', color: th.textPrimary },
               { val: flares, label: t.insights.flareDays, color: flares > 5 ? th.orange : th.textPrimary },
               { val: entries.length, label: t.insights.daysLogged, color: th.green },
             ].map((stat, i) => (
@@ -241,10 +245,18 @@ export default function Insights() {
             </div>
           )}
 
-          <button style={{ width: '100%', background: th.green, color: 'white', border: 'none', borderRadius: '8px', padding: '16px', fontSize: '14px', fontWeight: '700', cursor: 'pointer', letterSpacing: '0.04em' }}
-            onClick={() => alert(isZh ? 'PDF匯出功能即將推出！' : 'PDF export coming soon!')}>
-            {t.insights.export}
-          </button>
+          {/* Disclaimer - no export, tracker only */}
+          <div style={{ background: th.greenLight, borderRadius: '12px', padding: '16px', border: `1px solid ${th.greenSoft}`, marginBottom: '12px' }}>
+            <div style={{ fontSize: '11px', fontWeight: '700', color: th.green, letterSpacing: '0.08em', textTransform: 'uppercase', marginBottom: '8px' }}>
+              📋 {isZh ? '關於此數據' : 'About This Data'}
+            </div>
+            <div style={{ fontSize: '12px', color: th.greenDark, lineHeight: '1.6' }}>
+              {isZh
+                ? 'Anitch 濕疹日記是一個個人追蹤工具，所有數據僅供您自己參考。如有任何皮膚健康疑慮，請諮詢皮膚科醫生。'
+                : 'Anitch Eczema Diary is a personal tracking tool. All data is for your own reference only. Please consult a dermatologist for any skin health concerns.'
+              }
+            </div>
+          </div>
         </div>
       )}
     </div>
