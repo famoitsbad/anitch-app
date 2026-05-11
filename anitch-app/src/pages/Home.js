@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom'
 import { supabase } from '../lib/supabase'
 import { useApp } from '../lib/AppContext'
 import { LOGO_BASE64 } from '../lib/logo'
+import LearnSection from '../components/LearnSection'
 
 const ENCOURAGEMENTS_EN = [
   "Today, take care of your skin — and yourself. 🌿",
@@ -225,6 +226,10 @@ export default function Home() {
           </button>
         )}
       </div>
+
+      {/* Learn Section */}
+      <LearnSection isZh={isZh} th={th} />
+      <div style={{ height: '20px' }} />
     </div>
   )
 }
