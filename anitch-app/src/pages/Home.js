@@ -1,5 +1,5 @@
-import React, { useEffect, useState } from 'react'
-import { useNavigate } from 'react-router-dom'
+import React, { useEffect, useState, useRef } from 'react'
+import { useNavigate, useLocation } from 'react-router-dom'
 import { supabase } from '../lib/supabase'
 import { useApp } from '../lib/AppContext'
 import LearnSection from '../components/LearnSection'
@@ -12,6 +12,8 @@ const DAY_LABELS_ZH = ['日','一','二','三','四','五','六']
 export default function Home() {
   const { user, profile, t, th, lang } = useApp()
   const navigate = useNavigate()
+  const location = useLocation()
+  const prevPathRef = useRef(location.pathname)
   const [entries, setEntries] = useState([])
   const [loading, setLoading] = useState(true)
   const [calMonth, setCalMonth] = useState(() => {
@@ -22,6 +24,14 @@ export default function Home() {
   const today = new Date().toISOString().split('T')[0]
 
   useEffect(() => { loadEntries() }, [user])
+
+  // Re-fetch whenever user navigates back to Home from another page
+  useEffect(() => {
+    if (prevPathRef.current !== '/' && location.pathname === '/') {
+      if (user) loadEntries()
+    }
+    prevPathRef.current = location.pathname
+  }, [location.pathname])
 
   async function loadEntries() {
     const ninetyDaysAgo = new Date()
@@ -281,7 +291,7 @@ export default function Home() {
             <div style={{ display: 'flex', alignItems: 'flex-end', gap: '6px', height: '72px' }}>
               {last7.map((d, i) => (
                 <div key={i} style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '4px', justifyContent: 'flex-end' }}>
-                  <div style={{ width: '100%', borderRadius: '3px 3px 0 0', height: `${Math.max(3, (d.val / 72) * 64)}px`, background: d.val >= 16 ? th.orange : d.val > 0 ? th.green : th.border, opacity: d.has ? 1 : 0.3, transition: 'height 0.3s' }} />
+                  <div style={{ width: '100%', borderRadius: '3px 3px 0 0', height: `${Math.max(3, Math.min(64, (d.val / 16) * 64))}px`, background: d.val >= 16 ? th.orange : d.val > 0 ? th.green : th.border, opacity: d.has ? 1 : 0.3, transition: 'height 0.3s' }} />
                   <div style={{ fontSize: '9px', color: th.textMuted, fontWeight: '600' }}>{d.day}</div>
                 </div>
               ))}
