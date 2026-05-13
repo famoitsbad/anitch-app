@@ -171,7 +171,8 @@ export default function Log() {
     }, { onConflict: 'user_id,date' })
 
     setSaved(true); setSaving(false)
-    setTimeout(() => navigate('/'), 2500)
+    const timer = setTimeout(() => navigate('/'), 2000)
+    return () => clearTimeout(timer)
   }
 
   const regionLabels = {
@@ -199,8 +200,7 @@ export default function Log() {
   if (saved) return (
     <div style={{ minHeight: '100vh', background: th.green, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '24px' }}>
       <div style={{ background: th.white, borderRadius: '20px', padding: '40px 28px', textAlign: 'center', maxWidth: '320px', width: '100%' }}>
-        <img src={LOGO_BASE64} alt="anitch" style={{ height: '22px', width: 'auto', marginBottom: '20px' }} />
-        <div style={{ fontSize: '40px', margin: '16px 0' }}>🌿</div>
+        <div style={{ fontSize: '48px', margin: '0 0 16px' }}>🌿</div>
         <div style={{ fontSize: '18px', fontWeight: '700', color: th.textPrimary, marginBottom: '10px', lineHeight: '1.4' }}>{thankYouMsg}</div>
         <div style={{ fontSize: '13px', color: th.textMuted }}>{isZh ? '記錄已儲存，正在返回主頁...' : 'Entry saved, returning to home...'}</div>
       </div>
