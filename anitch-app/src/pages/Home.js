@@ -40,7 +40,11 @@ export default function Home() {
       .eq('user_id', user.id)
       .gte('date', ninetyDaysAgo.toISOString().split('T')[0])
       .order('date', { ascending: false })
-    setEntries(data || [])
+    const loaded = data || []
+    setEntries(loaded)
+    // Store today's entry in context so BottomNav can pass it to Log
+    const todayRec = loaded.find(e => e.date === today) || null
+    setTodayEntry(todayRec)
     setLoading(false)
   }
 
