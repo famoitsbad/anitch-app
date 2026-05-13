@@ -10,7 +10,7 @@ const DAY_LABELS_EN = ['S','M','T','W','T','F','S']
 const DAY_LABELS_ZH = ['日','一','二','三','四','五','六']
 
 export default function Home() {
-  const { user, profile, t, th, lang } = useApp()
+  const { user, profile, t, th, lang, setTodayEntry } = useApp()
   const navigate = useNavigate()
   const location = useLocation()
   const prevPathRef = useRef(location.pathname)

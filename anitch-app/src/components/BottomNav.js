@@ -7,7 +7,7 @@ import { Home, BarChart2, ClipboardEdit, History, UserCircle } from 'lucide-reac
 export default function BottomNav() {
   const navigate = useNavigate()
   const location = useLocation()
-  const { t } = useApp()
+  const { t, todayEntry } = useApp()
 
   const left = [
     { path: '/', icon: Home, label: t.nav.home },
@@ -39,7 +39,7 @@ export default function BottomNav() {
       <div style={s.fabWrap}>
         <button
           style={{ ...s.fab, ...(isLog ? s.fabActive : {}) }}
-          onClick={() => navigate('/log')}
+          onClick={() => navigate('/log', todayEntry ? { state: { existingEntry: todayEntry } } : undefined)}
           aria-label={t.nav.log}
         >
           <ClipboardEdit size={24} strokeWidth={2} color="white" />

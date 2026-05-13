@@ -11,6 +11,7 @@ export function AppProvider({ children }) {
   const [lang, setLang] = useState(localStorage.getItem('anitch_lang') || 'en')
   const [darkMode, setDarkMode] = useState(localStorage.getItem('anitch_dark') === 'true')
   const [loading, setLoading] = useState(true)
+  const [todayEntry, setTodayEntry] = useState(null)
 
   const t = translations[lang]
   const th = darkMode ? darkTheme : theme
@@ -50,7 +51,7 @@ export function AppProvider({ children }) {
   }
 
   return (
-    <AppContext.Provider value={{ user, profile, lang, t, th, loading, darkMode, switchLang, loadProfile, toggleDarkMode }}>
+    <AppContext.Provider value={{ user, profile, lang, t, th, loading, darkMode, switchLang, loadProfile, toggleDarkMode, todayEntry, setTodayEntry }}>
       <div style={{ background: th.lightGrey, minHeight: '100vh' }}>
         {children}
       </div>
