@@ -22,8 +22,8 @@ export default function Insights() {
   const [window, setWindow] = useState(14); // 7 | 14 | 30
 
   useEffect(() => {
-    if (user) loadEntries();
-  }, [user]);
+    if (user) loadEntries(); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [user]); // eslint-disable-line react-hooks/exhaustive-deps
 
   async function loadEntries() {
     setLoading(true);

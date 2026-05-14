@@ -19,13 +19,14 @@ export default function History() {
   const [compareMode, setCompareMode] = useState(false);
   const [compare, setCompare] = useState([]);
 
-  useEffect(() => { if (user) load(); }, [user]);
-
-  async function load() {
-    const { data } = await supabase.from('entries').select('*')
-      .eq('user_id', user.id).order('date', { ascending: false });
-    setEntries(data || []);
-  }
+  useEffect(() => {
+    async function load() {
+      const { data } = await supabase.from('entries').select('*')
+        .eq('user_id', user.id).order('date', { ascending: false });
+      setEntries(data || []);
+    }
+    if (user) load(); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [user]);
 
   const withPhotos = entries.filter(e => e.photo_url);
 

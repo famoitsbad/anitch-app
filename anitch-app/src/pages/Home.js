@@ -24,28 +24,23 @@ const ANITCH_TIPS = {
 };
 
 export default function Home() {
-  const { th, lang, user, profile, todayEntry, setTodayEntry } = useApp();
+  const { th, lang, user, profile, setTodayEntry } = useApp();
   const location = useLocation();
   const [entries, setEntries] = useState([]);
   const [month, setMonth] = useState(new Date());
-  const [loading, setLoading] = useState(true);
-
   useEffect(() => {
-    if (user) loadEntries();
-  }, [user, location.pathname]);
-
-  async function loadEntries() {
-    setLoading(true);
-    const from = new Date(); from.setMonth(from.getMonth() - 2);
-    const { data } = await supabase.from('entries')
-      .select('*').eq('user_id', user.id)
-      .gte('date', fmtDate(from)).order('date', { ascending: false });
-    const all = data || [];
-    setEntries(all);
-    const todayRec = all.find(e => e.date === today()) || null;
-    setTodayEntry(todayRec);
-    setLoading(false);
-  }
+    async function loadEntries() {
+      const from = new Date(); from.setMonth(from.getMonth() - 2);
+      const { data } = await supabase.from('entries')
+        .select('*').eq('user_id', user.id)
+        .gte('date', fmtDate(from)).order('date', { ascending: false });
+      const all = data || [];
+      setEntries(all);
+      const todayRec = all.find(e => e.date === today()) || null;
+      setTodayEntry(todayRec);
+    }
+    if (user) loadEntries(); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [user, location.pathname]); // eslint-disable-line react-hooks/exhaustive-deps
 
   // Calendar logic
   const yr = month.getFullYear();

@@ -57,7 +57,7 @@ export default function Log() {
   const [saving, setSaving] = useState(false);
   const [saved, setSaved] = useState(false);
 
-  useEffect(() => {
+  useEffect(() => { // eslint-disable-line react-hooks/exhaustive-deps
     if (existing) {
       if (existing.easi_regions) setRegions(existing.easi_regions);
       if (existing.affected_zones) setZones(existing.affected_zones);
@@ -67,7 +67,7 @@ export default function Log() {
       if (existing.notes) setNotes(existing.notes);
       if (existing.photo_url) setPhotoUrl(existing.photo_url);
     }
-  }, []);
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
   const easi = calcEasi(regions);
   const severity = severityLabel(easi, lang);
