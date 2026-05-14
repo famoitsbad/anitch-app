@@ -1,100 +1,71 @@
-import React from 'react'
-import { useNavigate, useLocation } from 'react-router-dom'
-import { useApp } from '../lib/AppContext'
-import { theme, fonts } from '../lib/theme'
-import { Home, BarChart2, ClipboardEdit, History, UserCircle } from 'lucide-react'
+import React from 'react';
+import { useNavigate, useLocation } from 'react-router-dom';
+import { useApp } from '../lib/AppContext';
+import { t } from '../i18n/translations';
 
 export default function BottomNav() {
-  const navigate = useNavigate()
-  const location = useLocation()
-  const { t, todayEntry } = useApp()
+  const { th, lang, todayEntry } = useApp();
+  const navigate = useNavigate();
+  const location = useLocation();
 
-  const left = [
-    { path: '/', icon: Home, label: t.nav.home },
-    { path: '/insights', icon: BarChart2, label: t.nav.insights },
-  ]
-  const right = [
-    { path: '/history', icon: History, label: t.nav.history },
-    { path: '/profile', icon: UserCircle, label: t.nav.profile },
-  ]
-
-  function Tab({ path, icon: Icon, label }) {
-    const active = location.pathname === path
-    return (
-      <button style={s.tab} onClick={() => navigate(path)}>
-        {active && <div style={s.activePill} />}
-        <Icon size={22} strokeWidth={active ? 2.5 : 1.8} color={active ? theme.green : '#9CA3AF'} style={{ position: 'relative', zIndex: 1 }} />
-        <div style={{ ...s.label, ...(active ? s.labelActive : {}), position: 'relative', zIndex: 1 }}>{label}</div>
-      </button>
-    )
+  function goLog() {
+    if (todayEntry) {
+      navigate('/log', { state: { existingEntry: todayEntry } });
+    } else {
+      navigate('/log');
+    }
   }
 
-  const isLog = location.pathname === '/log'
+  const tabs = [
+    { path: '/', icon: '🏠', label: t(lang, 'nav.home') },
+    { path: '/insights', icon: '📊', label: t(lang, 'nav.insights') },
+    null, // FAB placeholder
+    { path: '/history', icon: '📋', label: t(lang, 'nav.history') },
+    { path: '/profile', icon: '👤', label: t(lang, 'nav.profile') },
+  ];
+
+  const isActive = (path) => location.pathname === path;
 
   return (
-    <nav style={s.nav}>
-      {left.map(tab => <Tab key={tab.path} {...tab} />)}
-
-      {/* Raised Log FAB */}
-      <div style={s.fabWrap}>
-        <button
-          style={{ ...s.fab, ...(isLog ? s.fabActive : {}) }}
-          onClick={() => navigate('/log', todayEntry ? { state: { existingEntry: todayEntry } } : undefined)}
-          aria-label={t.nav.log}
-        >
-          <ClipboardEdit size={24} strokeWidth={2} color="white" />
-        </button>
-        <div style={{ ...s.label, color: isLog ? theme.green : '#9CA3AF', fontWeight: isLog ? '700' : '500', marginTop: '3px' }}>
-          {t.nav.log}
-        </div>
-      </div>
-
-      {right.map(tab => <Tab key={tab.path} {...tab} />)}
-    </nav>
-  )
-}
-
-const s = {
-  nav: {
-    position: 'fixed', bottom: 0, left: 0, right: 0,
-    background: 'rgba(255,255,255,0.97)',
-    backdropFilter: 'blur(12px)',
-    borderTop: `1px solid ${theme.border}`,
-    display: 'flex',
-    alignItems: 'flex-end',
-    padding: `0 0 env(safe-area-inset-bottom, 12px)`,
-    zIndex: 100,
-    maxWidth: '500px',
-    margin: '0 auto',
-    boxShadow: '0 -2px 12px rgba(0,75,57,0.06)',
-    minHeight: '60px',
-  },
-  tab: {
-    flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '3px',
-    background: 'none', border: 'none', cursor: 'pointer', padding: '8px 0',
-    position: 'relative', fontFamily: fonts.body,
-  },
-  activePill: {
-    position: 'absolute', top: '4px', width: '36px', height: '32px', borderRadius: '10px',
-    background: theme.greenLight,
-  },
-  fabWrap: {
-    flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center',
-    paddingBottom: '6px',
-  },
-  fab: {
-    width: '52px', height: '52px', borderRadius: '16px',
-    background: theme.green,
-    border: 'none', cursor: 'pointer',
-    display: 'flex', alignItems: 'center', justifyContent: 'center',
-    marginTop: '-22px',
-    boxShadow: '0 6px 20px rgba(0,75,57,0.45)',
-    transition: 'transform 0.15s, box-shadow 0.15s',
-  },
-  fabActive: {
-    boxShadow: '0 4px 12px rgba(0,75,57,0.35)',
-    transform: 'scale(0.96)',
-  },
-  label: { fontSize: '10px', color: '#9CA3AF', fontWeight: '500', letterSpacing: '0.02em', fontFamily: fonts.body },
-  labelActive: { color: theme.green, fontWeight: '700' },
+    <div style={{
+      position: 'fixed', bottom: 0, left: 0, right: 0, zIndex: 50,
+      background: th.navBg, borderTop: `1px solid ${th.border}`,
+      display: 'flex', alignItems: 'flex-end',
+      paddingBottom: 'env(safe-area-inset-bottom)',
+      boxShadow: `0 -2px 12px ${th.shadow}`,
+    }}>
+      {tabs.map((tab, i) => {
+        if (!tab) {
+          // FAB
+          return (
+            <div key="fab" style={{ flex: 1, display: 'flex', justifyContent: 'center', paddingBottom: 6 }}>
+              <button onClick={goLog} style={{
+                width: 52, height: 52, borderRadius: 16,
+                background: '#004B39', border: 'none',
+                display: 'flex', alignItems: 'center', justifyContent: 'center',
+                fontSize: 24, cursor: 'pointer', flexShrink: 0,
+                boxShadow: '0 6px 20px rgba(0,75,57,0.45)',
+                transform: 'translateY(-10px)',
+                position: 'relative',
+              }}>
+                {todayEntry ? '✏️' : '➕'}
+              </button>
+            </div>
+          );
+        }
+        return (
+          <button key={tab.path} onClick={() => navigate(tab.path)}
+            style={{
+              flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center',
+              justifyContent: 'center', padding: '8px 0 10px',
+              background: 'none', border: 'none', cursor: 'pointer',
+              color: isActive(tab.path) ? '#004B39' : th.textMuted,
+            }}>
+            <span style={{ fontSize: 20 }}>{tab.icon}</span>
+            <span style={{ fontSize: 10, marginTop: 2, fontWeight: isActive(tab.path) ? 700 : 400 }}>{tab.label}</span>
+          </button>
+        );
+      })}
+    </div>
+  );
 }
