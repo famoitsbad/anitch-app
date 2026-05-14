@@ -170,7 +170,7 @@ export default function Profile() {
         </div>
       )}
 
-      <div style={{ background: th.green, padding: 'env(safe-area-inset-top, 14px) 20px 24px', paddingTop: 'max(14px, env(safe-area-inset-top))' }}>
+      <div style={{ background: th.green, paddingTop: `calc(env(safe-area-inset-top, 0px) + 16px)`, paddingLeft: '20px', paddingRight: '20px', paddingBottom: '24px' }}>
         <div style={{ fontSize: '22px', fontWeight: '700', color: 'white' }}>{t.profile.title}</div>
       </div>
 

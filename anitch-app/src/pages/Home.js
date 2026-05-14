@@ -115,7 +115,7 @@ export default function Home() {
     <div style={{ background: th.lightGrey, minHeight: '100vh', fontFamily: "'Lato',sans-serif", paddingBottom: '100px' }}>
 
       {/* ── Header — no logo ── */}
-      <div style={{ background: th.green, paddingTop: 'max(14px, env(safe-area-inset-top))', paddingLeft: '20px', paddingRight: '20px', paddingBottom: '16px' }}>
+      <div style={{ background: th.green, paddingTop: `calc(env(safe-area-inset-top, 0px) + 16px)`, paddingLeft: '20px', paddingRight: '20px', paddingBottom: '16px' }}>
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
           <div>
             <div style={{ fontSize: '20px', fontWeight: '700', color: 'white', lineHeight: '1.25' }}>{getGreeting()}</div>
