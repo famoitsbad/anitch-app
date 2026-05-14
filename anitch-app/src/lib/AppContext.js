@@ -1,56 +1,62 @@
-import React, { createContext, useContext, useState, useEffect } from 'react';
-import { supabase } from './supabase';
-import { lightTheme, darkTheme } from './theme';
+import React, { createContext, useContext, useEffect, useState } from 'react'
+import { supabase } from '../lib/supabase'
+import { translations } from '../i18n/translations'
+import { theme, darkTheme } from '../lib/theme'
 
-const AppContext = createContext({});
+const AppContext = createContext({})
 
 export function AppProvider({ children }) {
-  const [user, setUser] = useState(null);
-  const [profile, setProfile] = useState(null);
-  const [lang, setLang] = useState('zh');
-  const [darkMode, setDarkMode] = useState(false);
-  const [todayEntry, setTodayEntry] = useState(null);
-  const th = darkMode ? darkTheme : lightTheme;
+  const [user, setUser] = useState(null)
+  const [profile, setProfile] = useState(null)
+  const [lang, setLang] = useState(localStorage.getItem('anitch_lang') || 'en')
+  const [darkMode, setDarkMode] = useState(localStorage.getItem('anitch_dark') === 'true')
+  const [loading, setLoading] = useState(true)
+  const [todayEntry, setTodayEntry] = useState(null)
+
+  const t = translations[lang]
+  const th = darkMode ? darkTheme : theme
 
   useEffect(() => {
     supabase.auth.getSession().then(({ data: { session } }) => {
-      setUser(session?.user ?? null);
-      if (session?.user) loadProfile(session.user.id);
-    });
+      setUser(session?.user ?? null)
+      if (session?.user) loadProfile(session.user.id)
+      else setLoading(false)
+    })
     const { data: { subscription } } = supabase.auth.onAuthStateChange((_e, session) => {
-      setUser(session?.user ?? null);
-      if (session?.user) loadProfile(session.user.id);
-      else { setProfile(null); setTodayEntry(null); }
-    });
-    return () => subscription.unsubscribe();
-  }, []);
+      setUser(session?.user ?? null)
+      if (session?.user) loadProfile(session.user.id)
+      else { setProfile(null); setLoading(false) }
+    })
+    return () => subscription.unsubscribe()
+  }, [])
 
-  async function loadProfile(uid) {
-    const { data } = await supabase.from('profiles').select('*').eq('id', uid).single();
+  async function loadProfile(userId) {
+    const { data } = await supabase.from('profiles').select('*').eq('id', userId).single()
     if (data) {
-      setProfile(data);
-      if (data.language) setLang(data.language);
-      if (data.dark_mode !== undefined) setDarkMode(data.dark_mode);
+      setProfile(data)
+      if (data.language) { setLang(data.language); localStorage.setItem('anitch_lang', data.language) }
     }
+    setLoading(false)
   }
 
-  async function toggleDarkMode() {
-    const next = !darkMode;
-    setDarkMode(next);
-    if (user) await supabase.from('profiles').update({ dark_mode: next }).eq('id', user.id);
+  async function switchLang(l) {
+    setLang(l); localStorage.setItem('anitch_lang', l)
+    if (user) await supabase.from('profiles').upsert({ id: user.id, language: l })
   }
 
-  async function toggleLang() {
-    const next = lang === 'en' ? 'zh' : 'en';
-    setLang(next);
-    if (user) await supabase.from('profiles').update({ language: next }).eq('id', user.id);
+  function toggleDarkMode() {
+    const next = !darkMode
+    setDarkMode(next)
+    localStorage.setItem('anitch_dark', next.toString())
   }
 
   return (
-    <AppContext.Provider value={{ user, profile, setProfile, lang, toggleLang, darkMode, toggleDarkMode, th, todayEntry, setTodayEntry }}>
-      {children}
+    <AppContext.Provider value={{ user, profile, lang, t, th, loading, darkMode, switchLang, loadProfile, toggleDarkMode, todayEntry, setTodayEntry }}>
+      <div style={{ background: th.lightGrey, minHeight: '100vh' }}>
+        {children}
+      </div>
     </AppContext.Provider>
-  );
+  )
 }
 
-export function useApp() { return useContext(AppContext); }
+export const useApp = () => useContext(AppContext)

@@ -1,230 +1,347 @@
-import React, { useState, useEffect } from 'react';
-import { useLocation } from 'react-router-dom';
-import { useApp } from '../lib/AppContext';
-import { supabase } from '../lib/supabase';
-import { t } from '../i18n/translations';
-import LearnSection from '../components/LearnSection';
+import React, { useEffect, useState, useRef } from 'react'
+import { useNavigate, useLocation } from 'react-router-dom'
+import { supabase } from '../lib/supabase'
+import { useApp } from '../lib/AppContext'
+import LearnSection from '../components/LearnSection'
 
-function s(lang, path, ...a) { return t(lang, path, ...a); }
-
-function fmtDate(d) { return d.toISOString().slice(0, 10); }
-function today() { return fmtDate(new Date()); }
-
-const ANITCH_TIPS = {
-  en: [
-    { cond: e => e.symptoms?.includes('dryness'), tip: 'Your skin has been dry lately. Try Barrier Rescue Balm tonight.' },
-    { cond: e => e.symptoms?.includes('oozing'), tip: 'Oozing detected. Barrier Restore Face Cream can help calm inflammation.' },
-    { cond: () => true, tip: 'Consistent moisturising is key. Apply Barrier Repair Body Cream after every shower.' },
-  ],
-  zh: [
-    { cond: e => e.symptoms?.includes('dryness'), tip: '最近皮膚乾燥，試試今晚使用Barrier Rescue Balm。' },
-    { cond: e => e.symptoms?.includes('oozing'), tip: '發現有滲液，Barrier Restore Face Cream有助紓緩。' },
-    { cond: () => true, tip: '持續護膚是關鍵，每次沐浴後使用Barrier Repair Body Cream。' },
-  ],
-};
+const MONTH_NAMES_EN = ['January','February','March','April','May','June','July','August','September','October','November','December']
+const MONTH_NAMES_ZH = ['1月','2月','3月','4月','5月','6月','7月','8月','9月','10月','11月','12月']
+const DAY_LABELS_EN = ['S','M','T','W','T','F','S']
+const DAY_LABELS_ZH = ['日','一','二','三','四','五','六']
 
 export default function Home() {
-  const { th, lang, user, profile, setTodayEntry } = useApp();
-  const location = useLocation();
-  const [entries, setEntries] = useState([]);
-  const [month, setMonth] = useState(new Date());
+  const { user, profile, t, th, lang, setTodayEntry } = useApp()
+  const navigate = useNavigate()
+  const location = useLocation()
+  const prevPathRef = useRef(location.pathname)
+  const [entries, setEntries] = useState([])
+  const [loading, setLoading] = useState(true)
+  const [calMonth, setCalMonth] = useState(() => {
+    const now = new Date()
+    return { year: now.getFullYear(), month: now.getMonth() }
+  })
+  const isZh = lang === 'zh'
+  const today = new Date().toISOString().split('T')[0]
+
+  useEffect(() => { loadEntries() }, [user])
+
+  // Re-fetch whenever user navigates back to Home from another page
   useEffect(() => {
-    async function loadEntries() {
-      const from = new Date(); from.setMonth(from.getMonth() - 2);
-      const { data } = await supabase.from('entries')
-        .select('*').eq('user_id', user.id)
-        .gte('date', fmtDate(from)).order('date', { ascending: false });
-      const all = data || [];
-      setEntries(all);
-      const todayRec = all.find(e => e.date === today()) || null;
-      setTodayEntry(todayRec);
+    if (prevPathRef.current !== '/' && location.pathname === '/') {
+      if (user) loadEntries()
     }
-    if (user) loadEntries(); // eslint-disable-line react-hooks/exhaustive-deps
-  }, [user, location.pathname]); // eslint-disable-line react-hooks/exhaustive-deps
+    prevPathRef.current = location.pathname
+  }, [location.pathname])
 
-  // Calendar logic
-  const yr = month.getFullYear();
-  const mo = month.getMonth();
-  const firstDay = new Date(yr, mo, 1).getDay();
-  const daysInMonth = new Date(yr, mo + 1, 0).getDate();
-  const loggedDates = new Set(entries.map(e => e.date));
-  const todayStr = today();
-
-  function calDayStyle(day) {
-    const ds = `${yr}-${String(mo+1).padStart(2,'0')}-${String(day).padStart(2,'0')}`;
-    const isToday = ds === todayStr;
-    const isLogged = loggedDates.has(ds);
-    const isPast = ds < todayStr;
-    const isFuture = ds > todayStr;
-    let bg = 'transparent', color = th.text, border = 'none', fontWeight = 400;
-    if (isLogged && isToday) { bg = th.green; color = '#fff'; border = `2px solid ${th.orange}`; fontWeight = 700; }
-    else if (isLogged) { bg = th.green; color = '#fff'; fontWeight = 700; }
-    else if (isToday) { bg = th.orange; color = '#fff'; fontWeight = 700; }
-    else if (isFuture) { color = '#888'; }
-    else if (isPast) { color = '#bbb'; }
-    return { bg, color, border, fontWeight };
+  async function loadEntries() {
+    const ninetyDaysAgo = new Date()
+    ninetyDaysAgo.setDate(ninetyDaysAgo.getDate() - 90)
+    const { data } = await supabase.from('entries').select('*')
+      .eq('user_id', user.id)
+      .gte('date', ninetyDaysAgo.toISOString().split('T')[0])
+      .order('date', { ascending: false })
+    const loaded = data || []
+    setEntries(loaded)
+    // Store today's entry in context so BottomNav can pass it to Log
+    const todayRec = loaded.find(e => e.date === today) || null
+    setTodayEntry(todayRec)
+    setLoading(false)
   }
 
-  // Streak
-  let streak = 0;
-  const d = new Date(); d.setDate(d.getDate() - 1);
-  if (loggedDates.has(todayStr)) {
-    streak = 1;
-    let cur = new Date(); cur.setDate(cur.getDate() - 1);
-    while (loggedDates.has(fmtDate(cur))) { streak++; cur.setDate(cur.getDate() - 1); }
+  const avg = entries.length
+    ? (entries.reduce((s, e) => s + (e.easi_score ?? e.severity ?? 0), 0) / entries.length).toFixed(1)
+    : '—'
+  const flares = entries.filter(e => (e.easi_score ?? e.severity ?? 0) >= 6).length
+  const streak = calcStreak(entries)
+  const stableStreak = calcStableStreak(entries)
+  const isFirstTime = entries.length === 0
+  const name = profile?.name || ''
+  const reward15Unlocked = streak >= 15
+  const reward30Unlocked = streak >= 30
+
+  function getGreeting() {
+    if (isFirstTime)
+      return isZh
+        ? `你好${name ? `，${name}` : ''}！讓我們開始這段旅程吧`
+        : `Hello${name ? `, ${name}` : ''}! Let's start your journey`
+    return isZh
+      ? `歡迎回來${name ? `，${name}` : ''}！`
+      : `Welcome back${name ? `, ${name}` : ''}!`
   }
 
-  // Stats
-  const scored = entries.filter(e => e.easi_score != null);
-  const avgEasi = scored.length > 0 ? (scored.reduce((s, e) => s + e.easi_score, 0) / scored.length).toFixed(1) : '—';
-  const flareDays = scored.filter(e => e.easi_score >= 7).length;
 
-  // Anitch tip
-  let tip = '';
-  if (entries.length > 0) {
-    const recent = entries[0];
-    const tips = ANITCH_TIPS[lang] || ANITCH_TIPS.en;
-    const matched = tips.find(t => t.cond(recent));
-    tip = matched ? matched.tip : tips[tips.length - 1].tip;
+  const recentDryness = entries.slice(0, 3).some(e => e.symptoms?.includes('dryness'))
+  const recentOozing = entries.slice(0, 3).some(e => e.symptoms?.includes('weeping'))
+  function getProductTip() {
+    if (recentOozing) return isZh
+      ? '根據您近期的記錄，Anitch Barrier Rescue Balm 可能特別適合您現在的皮膚狀況。'
+      : 'Based on your recent logs, Anitch Barrier Rescue Balm may be especially suitable for your current skin condition.'
+    if (recentDryness) return isZh
+      ? '您近期記錄顯示皮膚較乾燥，Anitch Barrier Restore Face Cream 或 Barrier Repair Body Cream 可提供深層保濕。'
+      : 'Your recent logs show dryness. Anitch Barrier Restore Face Cream or Barrier Repair Body Cream may help with deep hydration.'
+    return null
+  }
+  const productTip = entries.length >= 3 ? getProductTip() : null
+
+  const loggedDates = new Set(entries.map(e => e.date))
+  const isCurrentMonth = calMonth.year === new Date().getFullYear() && calMonth.month === new Date().getMonth()
+  const monthLabel = isZh
+    ? `${calMonth.year}年${MONTH_NAMES_ZH[calMonth.month]}`
+    : `${MONTH_NAMES_EN[calMonth.month]} ${calMonth.year}`
+
+  function calDays() {
+    const firstDay = new Date(calMonth.year, calMonth.month, 1).getDay()
+    const daysInMonth = new Date(calMonth.year, calMonth.month + 1, 0).getDate()
+    const cells = []
+    for (let i = 0; i < firstDay; i++) cells.push(null)
+    for (let d = 1; d <= daysInMonth; d++) cells.push(d)
+    return cells
   }
 
-  // Rewards
-  const r15done = streak >= 15;
-  const r30done = streak >= 30;
+  function prevMonth() {
+    setCalMonth(m => m.month === 0 ? { year: m.year - 1, month: 11 } : { ...m, month: m.month - 1 })
+  }
+  function nextMonth() {
+    if (isCurrentMonth) return
+    setCalMonth(m => m.month === 11 ? { year: m.year + 1, month: 0 } : { ...m, month: m.month + 1 })
+  }
 
-  const cardStyle = {
-    background: th.card, borderRadius: 16, padding: '16px',
-    marginBottom: 12, boxShadow: `0 2px 8px ${th.shadow}`,
-  };
-
-  const initials = (profile?.name || 'A').slice(0, 1).toUpperCase();
+  if (loading) return (
+    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: '100vh', background: '#004B39' }}>
+      <div style={{ color: 'white', fontSize: '16px', fontFamily: "'Lato',sans-serif" }}>Loading…</div>
+    </div>
+  )
 
   return (
-    <div style={{ background: th.bg, minHeight: '100vh', paddingBottom: 90 }}>
-      {/* Header */}
-      <div style={{ background: th.headerBg, padding: '52px 20px 16px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-        <div>
-          <div style={{ fontSize: 18, fontWeight: 700, color: '#fff' }}>
-            {profile?.name
-              ? (entries.length > 1 ? s(lang, 'home.greetingReturn', profile.name) : s(lang, 'home.greeting', profile.name))
-              : 'anitch™'}
+    <div style={{ background: th.lightGrey, minHeight: '100vh', fontFamily: "'Lato',sans-serif", paddingBottom: '100px' }}>
+
+      {/* ── Header — no logo ── */}
+      <div style={{ background: th.green, paddingTop: 'max(14px, env(safe-area-inset-top))', paddingLeft: '20px', paddingRight: '20px', paddingBottom: '16px' }}>
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+          <div>
+            <div style={{ fontSize: '20px', fontWeight: '700', color: 'white', lineHeight: '1.25' }}>{getGreeting()}</div>
+            <div style={{ fontSize: '11px', color: 'rgba(255,255,255,0.55)', marginTop: '2px' }}>
+              {new Date().toLocaleDateString(isZh ? 'zh-HK' : 'en-GB', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' })}
+            </div>
           </div>
-          <div style={{ fontSize: 12, color: 'rgba(255,255,255,0.65)', marginTop: 2 }}>
-            {new Date().toLocaleDateString(lang === 'zh' ? 'zh-HK' : 'en-US', { weekday: 'long', month: 'long', day: 'numeric' })}
+          <div style={{ width: '34px', height: '34px', borderRadius: '50%', background: 'rgba(255,255,255,0.2)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '14px', fontWeight: '700', color: 'white', border: '2px solid rgba(255,255,255,0.4)', flexShrink: 0 }}>
+            {name ? name[0].toUpperCase() : 'A'}
           </div>
         </div>
-        <div style={{
-          width: 40, height: 40, borderRadius: '50%',
-          background: th.orange, display: 'flex', alignItems: 'center',
-          justifyContent: 'center', fontWeight: 700, fontSize: 16, color: '#fff',
-        }}>{initials}</div>
       </div>
 
-      <div style={{ padding: '16px 16px 0' }}>
+      <div style={{ padding: '14px 14px 0' }}>
 
-        {/* Calendar + Rewards card */}
-        <div style={cardStyle}>
-          {/* Month nav */}
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 10 }}>
-            <button onClick={() => setMonth(new Date(yr, mo - 1, 1))}
-              style={{ background: 'none', border: 'none', fontSize: 18, color: th.textSub, cursor: 'pointer', padding: '0 8px' }}>‹</button>
-            <div style={{ fontWeight: 700, fontSize: 14, color: th.text }}>
-              {month.toLocaleDateString(lang === 'zh' ? 'zh-HK' : 'en-US', { month: 'long', year: 'numeric' })}
-              {streak > 0 && (
-                <span style={{ marginLeft: 8, background: th.orangeLight, color: th.orange, borderRadius: 20, padding: '2px 8px', fontSize: 11, fontWeight: 700 }}>
-                  🔥 {streak} {s(lang, 'home.streak')}
-                </span>
-              )}
+        {/* ── Log Calendar card ── */}
+        <div style={{ background: th.white, borderRadius: '14px', border: `1px solid ${th.border}`, marginBottom: '12px', overflow: 'hidden' }}>
+
+          <div style={{ padding: '14px 16px 0', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+            <div style={{ fontSize: '11px', fontWeight: '700', color: th.green, letterSpacing: '0.4px', textTransform: 'uppercase' }}>
+              {isZh ? '記錄日曆' : 'Log calendar'}
             </div>
-            <button onClick={() => setMonth(new Date(yr, mo + 1, 1))}
-              style={{ background: 'none', border: 'none', fontSize: 18, color: th.textSub, cursor: 'pointer', padding: '0 8px' }}>›</button>
+            {streak > 0 && (
+              <div style={{ display: 'flex', alignItems: 'center', gap: '5px', background: th.lightGrey, border: `1px solid ${th.border}`, borderRadius: '20px', padding: '3px 10px' }}>
+                <span style={{ fontSize: '13px', fontWeight: '800', color: th.orange }}>{streak}</span>
+                <span style={{ fontSize: '9px', color: th.textMuted }}>{isZh ? '天連續' : 'day streak'}</span>
+              </div>
+            )}
           </div>
 
-          {/* Day headers */}
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(7, 1fr)', gap: 2, marginBottom: 4 }}>
-            {(lang === 'zh' ? ['日','一','二','三','四','五','六'] : ['S','M','T','W','T','F','S']).map((d, i) => (
-              <div key={i} style={{ textAlign: 'center', fontSize: 10, color: th.textMuted, fontWeight: 600 }}>{d}</div>
+          {/* Month nav */}
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '8px 16px 6px' }}>
+            <div style={{ fontSize: '12px', fontWeight: '700', color: th.textPrimary }}>{monthLabel}</div>
+            <div style={{ display: 'flex', gap: '4px' }}>
+              <button onClick={prevMonth} style={{ background: 'none', border: 'none', fontSize: '18px', color: th.green, cursor: 'pointer', padding: '0 6px', lineHeight: 1 }}>‹</button>
+              <button onClick={nextMonth} disabled={isCurrentMonth} style={{ background: 'none', border: 'none', fontSize: '18px', color: isCurrentMonth ? th.textLight : th.green, cursor: isCurrentMonth ? 'default' : 'pointer', padding: '0 6px', lineHeight: 1 }}>›</button>
+            </div>
+          </div>
+
+          {/* Day labels */}
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(7,1fr)', padding: '0 10px', gap: '2px' }}>
+            {(isZh ? DAY_LABELS_ZH : DAY_LABELS_EN).map((d, i) => (
+              <div key={i} style={{ textAlign: 'center', fontSize: '9px', fontWeight: '700', color: th.textMuted, paddingBottom: '4px' }}>{d}</div>
             ))}
           </div>
 
-          {/* Calendar days */}
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(7, 1fr)', gap: 3 }}>
-            {Array(firstDay).fill(null).map((_, i) => <div key={`e${i}`} />)}
-            {Array(daysInMonth).fill(null).map((_, i) => {
-              const day = i + 1;
-              const { bg, color, border, fontWeight } = calDayStyle(day);
+          {/* Days grid */}
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(7,1fr)', padding: '0 10px 14px', gap: '3px' }}>
+            {calDays().map((day, i) => {
+              if (!day) return <div key={i} />
+              const ds = `${calMonth.year}-${String(calMonth.month + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`
+              const isToday = ds === today
+              const isLogged = loggedDates.has(ds)
+              const isFuture = ds > today
+              const isPast = ds < today
+
+              let bg = 'transparent'
+              let color = isFuture ? '#888888' : isPast ? th.textLight : th.textMuted
+              let outlineStyle = 'none'
+
+              if (isLogged && isToday) { bg = th.green; color = 'white'; outlineStyle = `2.5px solid ${th.orange}` }
+              else if (isLogged) { bg = th.green; color = 'white' }
+              else if (isToday) { bg = th.orange; color = 'white' }
+
               return (
-                <div key={day} style={{
-                  aspectRatio: '1', borderRadius: '50%', display: 'flex',
-                  alignItems: 'center', justifyContent: 'center',
-                  background: bg, color, border, fontWeight,
-                  fontSize: 11,
-                }}>{day}</div>
-              );
+                <div key={i} style={{ width: '30px', height: '30px', borderRadius: '50%', background: bg, color, outline: outlineStyle, outlineOffset: '1px', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '10px', fontWeight: '600', margin: '0 auto' }}>
+                  {day}
+                </div>
+              )
             })}
           </div>
 
-          {/* Rewards */}
-          <div style={{ borderTop: `1px solid ${th.border}`, marginTop: 12, paddingTop: 12 }}>
-            <div style={{ fontSize: 12, fontWeight: 700, color: th.text, marginBottom: 8 }}>
-              {s(lang, 'home.rewards')}
+          {/* Care Rewards */}
+          <div style={{ borderTop: `1px solid ${th.borderLight}`, padding: '12px 16px 14px' }}>
+            <div style={{ fontSize: '9px', fontWeight: '700', color: th.textMuted, letterSpacing: '0.6px', textTransform: 'uppercase', marginBottom: '10px' }}>
+              {isZh ? '護膚獎勵' : 'Care rewards'}
             </div>
-            {[
-              { days: 15, label: s(lang, 'home.r15'), done: r15done },
-              { days: 30, label: s(lang, 'home.r30'), done: r30done },
-            ].map(r => (
-              <div key={r.days} style={{
-                display: 'flex', alignItems: 'center', gap: 8, marginBottom: 6,
-                padding: '8px 10px', borderRadius: 10,
-                background: r.done ? th.greenLight : th.bg,
-              }}>
-                <span style={{ fontSize: 14 }}>{r.done ? '🔓' : '🔒'}</span>
-                <div style={{ flex: 1 }}>
-                  <div style={{ fontSize: 11, color: th.text }}>{r.label}</div>
-                  <div style={{ height: 4, background: th.border, borderRadius: 2, marginTop: 4, overflow: 'hidden' }}>
-                    <div style={{ width: `${Math.min(100, (streak / r.days) * 100)}%`, height: '100%', background: r.done ? th.green : th.orange, borderRadius: 2 }} />
-                  </div>
-                </div>
-                {r.done && <span style={{ fontSize: 11, color: th.green, fontWeight: 700 }}>✓</span>}
+
+            {/* 15-day */}
+            <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '10px', ...(reward15Unlocked ? { background: th.greenLight, border: `1px solid ${th.greenSoft}`, borderRadius: '10px', padding: '9px 10px' } : {}) }}>
+              <div style={{ width: '32px', height: '32px', borderRadius: '8px', background: reward15Unlocked ? th.green : th.orangeLight, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+                <span style={{ fontSize: '15px' }}>{reward15Unlocked ? '🔓' : '🎁'}</span>
               </div>
-            ))}
-          </div>
-        </div>
-
-        {/* Stats */}
-        <div style={{ display: 'flex', gap: 10, marginBottom: 12 }}>
-          {[
-            { val: avgEasi, label: s(lang, 'home.avgEasi') },
-            { val: flareDays, label: s(lang, 'home.flareDays') },
-            { val: entries.length, label: s(lang, 'home.daysLogged') },
-          ].map((item, i) => (
-            <div key={i} style={{ flex: 1, background: th.card, borderRadius: 12, padding: '12px 8px', textAlign: 'center', boxShadow: `0 2px 6px ${th.shadow}` }}>
-              <div style={{ fontSize: 20, fontWeight: 700, color: th.green }}>{item.val}</div>
-              <div style={{ fontSize: 11, color: th.textSub, marginTop: 2 }}>{item.label}</div>
+              <div style={{ flex: 1 }}>
+                <div style={{ fontSize: '11px', fontWeight: '700', color: reward15Unlocked ? th.green : th.textPrimary, marginBottom: '2px' }}>
+                  {reward15Unlocked
+                    ? (isZh ? '15天達成 — 點擊領取免費樣品' : '15-day unlocked — tap to claim sample')
+                    : (isZh ? '15天連續 — 神秘免費樣品' : '15-day streak — mystery free sample')}
+                </div>
+                <div style={{ fontSize: '9px', color: reward15Unlocked ? th.greenMid : th.textMuted, marginBottom: '4px' }}>
+                  {reward15Unlocked
+                    ? (isZh ? '您的兌換碼已準備好' : 'Your reward code is ready')
+                    : (isZh ? `還需 ${Math.max(0, 15 - streak)} 天解鎖` : `${Math.max(0, 15 - streak)} more days to unlock`)}
+                </div>
+                <div style={{ height: '4px', background: reward15Unlocked ? th.greenSoft : th.lightGrey, borderRadius: '10px', overflow: 'hidden' }}>
+                  <div style={{ height: '100%', width: `${Math.min(100, (streak / 15) * 100)}%`, background: reward15Unlocked ? th.green : th.orange, borderRadius: '10px', transition: 'width 0.4s' }} />
+                </div>
+              </div>
+              <div style={{ fontSize: reward15Unlocked ? '13px' : '9px', fontWeight: '700', color: reward15Unlocked ? th.green : th.textMuted, flexShrink: 0, minWidth: '24px', textAlign: 'right' }}>
+                {reward15Unlocked ? '✓' : `${Math.min(streak, 15)}/15`}
+              </div>
             </div>
-          ))}
-        </div>
 
-        {/* View Insights nudge */}
-        <div style={{ ...cardStyle, display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12, padding: '12px 16px' }}>
-          <div>
-            <div style={{ fontSize: 12, color: th.textSub }}>{lang === 'zh' ? '想查看EASI趨勢？' : 'Want to see your EASI trend?'}</div>
-            <div style={{ fontSize: 14, fontWeight: 700, color: th.green }}>{s(lang, 'home.viewInsights')}</div>
+            {/* 30-day */}
+            <div style={{ display: 'flex', alignItems: 'center', gap: '10px', ...(reward30Unlocked ? { background: th.greenLight, border: `1px solid ${th.greenSoft}`, borderRadius: '10px', padding: '9px 10px' } : {}) }}>
+              <div style={{ width: '32px', height: '32px', borderRadius: '8px', background: reward30Unlocked ? th.green : '#FFFBEC', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+                <span style={{ fontSize: '15px' }}>{reward30Unlocked ? '🔓' : '🎟️'}</span>
+              </div>
+              <div style={{ flex: 1 }}>
+                <div style={{ fontSize: '11px', fontWeight: '700', color: reward30Unlocked ? th.green : th.textPrimary, marginBottom: '2px' }}>
+                  {reward30Unlocked
+                    ? (isZh ? '30天達成 — 點擊領取 $20 優惠券' : '30-day unlocked — tap to claim $20 coupon')
+                    : (isZh ? '30天連續 — $20 購物優惠券' : '30-day streak — $20 off coupon')}
+                </div>
+                <div style={{ fontSize: '9px', color: reward30Unlocked ? th.greenMid : th.textMuted, marginBottom: '4px' }}>
+                  {reward30Unlocked
+                    ? (isZh ? '可用於 anitch.com 購物' : 'Redeemable at anitch.com')
+                    : (isZh ? `還需 ${Math.max(0, 30 - streak)} 天解鎖` : `${Math.max(0, 30 - streak)} more days to unlock`)}
+                </div>
+                <div style={{ height: '4px', background: reward30Unlocked ? th.greenSoft : th.lightGrey, borderRadius: '10px', overflow: 'hidden' }}>
+                  <div style={{ height: '100%', width: `${Math.min(100, (streak / 30) * 100)}%`, background: reward30Unlocked ? th.green : '#c8920a', borderRadius: '10px', transition: 'width 0.4s' }} />
+                </div>
+              </div>
+              <div style={{ fontSize: reward30Unlocked ? '13px' : '9px', fontWeight: '700', color: reward30Unlocked ? th.green : th.textMuted, flexShrink: 0, minWidth: '24px', textAlign: 'right' }}>
+                {reward30Unlocked ? '✓' : `${Math.min(streak, 30)}/30`}
+              </div>
+            </div>
           </div>
-          <div style={{ fontSize: 20, color: th.green }}>📊</div>
         </div>
 
-        {/* Anitch tip */}
-        {tip && (
-          <div style={{ background: th.cream, borderRadius: 14, padding: '14px 16px', marginBottom: 12 }}>
-            <div style={{ fontSize: 11, fontWeight: 700, color: '#a05a00', marginBottom: 4 }}>{s(lang, 'home.tip')}</div>
-            <div style={{ fontSize: 13, color: '#7a4a00', lineHeight: 1.5 }}>{tip}</div>
+        {/* ── Stable streak badge ── */}
+        {stableStreak >= 7 && (
+          <div style={{ background: th.green, borderRadius: '12px', padding: '14px 16px', marginBottom: '12px', display: 'flex', alignItems: 'center', gap: '12px' }}>
+            <div style={{ fontSize: '26px' }}>🏅</div>
+            <div>
+              <div style={{ fontSize: '14px', fontWeight: '700', color: 'white', marginBottom: '2px' }}>
+                {isZh ? '皮膚屏障修復中！' : 'Skin barrier recovering!'}
+              </div>
+              <div style={{ fontSize: '12px', color: 'rgba(255,255,255,0.75)' }}>
+                {isZh ? `您已連續 ${stableStreak} 天狀況穩定，繼續加油` : `${stableStreak} stable days in a row — great progress`}
+              </div>
+            </div>
           </div>
         )}
 
-        {/* Learn section */}
-        <LearnSection />
+        {/* ── Stats ── */}
+        {entries.length > 0 && (
+          <div style={{ background: th.white, borderRadius: '12px', padding: '16px', display: 'flex', alignItems: 'center', marginBottom: '12px', border: `1px solid ${th.border}` }}>
+            {[
+              { val: avg, label: t.home.avgSeverity, color: th.textPrimary },
+              { val: flares, label: t.home.flareDays, color: flares > 5 ? th.orange : th.textPrimary },
+              { val: entries.length, label: t.home.daysLogged, color: th.green },
+            ].map((stat, i) => (
+              <React.Fragment key={i}>
+                {i > 0 && <div style={{ width: '1px', height: '36px', background: th.border }} />}
+                <div style={{ flex: 1, textAlign: 'center' }}>
+                  <div style={{ fontSize: '24px', fontWeight: '800', lineHeight: 1, marginBottom: '4px', color: stat.color }}>{stat.val}</div>
+                  <div style={{ fontSize: '10px', color: th.textMuted, textTransform: 'uppercase', letterSpacing: '0.06em', fontWeight: '600' }}>{stat.label}</div>
+                </div>
+              </React.Fragment>
+            ))}
+          </div>
+        )}
+
+        {/* ── View Insights nudge ── */}
+        {entries.length > 0 && (
+          <div style={{ background: th.white, borderRadius: '12px', padding: '12px 16px', marginBottom: '12px', border: `1px solid ${th.border}`, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+            <div>
+              <div style={{ fontSize: '11px', color: th.textMuted }}>{isZh ? '想查看EASI趨勢？' : 'Want to see your EASI trend?'}</div>
+              <div style={{ fontSize: '13px', fontWeight: '700', color: th.green }}>{isZh ? '查看分析 →' : 'View Insights →'}</div>
+            </div>
+            <div style={{ fontSize: '22px' }}>📊</div>
+          </div>
+        )}
+
+        {/* ── Product tip ── */}
+        {productTip && (
+          <div style={{ background: th.greenLight, borderRadius: '12px', padding: '14px 16px', marginBottom: '12px', border: `1px solid ${th.greenSoft}` }}>
+            <div style={{ fontSize: '11px', fontWeight: '700', color: th.green, marginBottom: '6px', letterSpacing: '0.08em', textTransform: 'uppercase' }}>
+              {isZh ? 'Anitch 產品建議' : 'Anitch product tip'}
+            </div>
+            <div style={{ fontSize: '13px', color: th.greenDark, lineHeight: '1.5' }}>{productTip}</div>
+          </div>
+        )}
+
+        {/* ── First time welcome ── */}
+        {isFirstTime && (
+          <div style={{ background: th.white, borderRadius: '12px', padding: '28px 20px', textAlign: 'center', marginBottom: '12px', border: `1px solid ${th.border}` }}>
+            <div style={{ fontSize: '14px', fontWeight: '700', color: th.textPrimary, marginBottom: '8px' }}>
+              {isZh ? '歡迎來到 Anitch 日記' : 'Welcome to Anitch Diary'}
+            </div>
+            <div style={{ fontSize: '13px', color: th.textMuted, lineHeight: '1.6' }}>
+              {isZh ? '每天記錄一次，慢慢揭開皮膚規律的秘密。' : 'Log once a day to slowly reveal your skin patterns.'}
+            </div>
+          </div>
+        )}
+
       </div>
+
+      <LearnSection isZh={isZh} th={th} />
+      <div style={{ height: '20px' }} />
     </div>
-  );
+  )
+}
+
+function calcStreak(entries) {
+  if (!entries.length) return 0
+  const dates = entries.map(e => e.date).sort().reverse()
+  let streak = 0
+  const check = new Date()
+  for (let i = 0; i < 90; i++) {
+    const ds = check.toISOString().split('T')[0]
+    if (dates.includes(ds)) streak++
+    else if (i > 0) break
+    check.setDate(check.getDate() - 1)
+  }
+  return streak
+}
+
+function calcStableStreak(entries) {
+  const sorted = [...entries].sort((a, b) => b.date.localeCompare(a.date))
+  let streak = 0
+  for (const e of sorted) {
+    if ((e.easi_score ?? e.severity ?? 0) <= 4) streak++
+    else break
+  }
+  return streak
 }
