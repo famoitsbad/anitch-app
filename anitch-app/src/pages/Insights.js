@@ -1,12 +1,12 @@
 import React, { useEffect, useState } from 'react'
 import { supabase } from '../lib/supabase'
 import { useApp } from '../lib/AppContext'
-import { LOGO_BASE64 } from '../lib/logo'
 
 export default function Insights() {
   const { user, t, th, lang } = useApp()
   const [entries, setEntries] = useState([])
   const [loading, setLoading] = useState(true)
+  const [chartRange, setChartRange] = useState(7)
   const isZh = lang === 'zh'
 
   useEffect(() => { loadEntries() }, [user])
@@ -112,7 +112,7 @@ export default function Insights() {
     return insights
   }
 
-  if (loading) return <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: '100vh', background: '#004B39' }}><img src={LOGO_BASE64} alt="anitch" style={{ height: '28px' }} /></div>
+  if (loading) return <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: '100vh', background: '#004B39' }}><div style={{ color: 'white', fontSize: '16px', fontFamily: "'Lato',sans-serif" }}>Loading…</div></div>
 
   const insights = generateInsights()
   // Use EASI score if available, otherwise fall back to normalized severity
@@ -120,12 +120,15 @@ export default function Insights() {
   const avg = entries.length ? (entries.reduce((s, e) => s + getScore(e), 0) / entries.length).toFixed(1) : '—'
   const avgLabel = entries.some(e => e.easi_score !== undefined) ? `${avg} / 72` : avg
   const flares = entries.filter(e => e.easi_score !== undefined ? e.easi_score >= 16 : e.severity >= 6).length
-  const last14 = Array.from({ length: 14 }, (_, i) => {
-    const d = new Date(); d.setDate(d.getDate() - 13 + i)
+  const chartData = Array.from({ length: chartRange }, (_, i) => {
+    const d = new Date()
+    d.setDate(d.getDate() - (chartRange - 1) + i)
     const ds = d.toISOString().split('T')[0]
     const entry = entries.find(e => e.date === ds)
-    const val = entry ? (entry.easi_score !== undefined ? entry.easi_score / 72 * 9 : entry.severity) : 0
-    return { day: t.days[d.getDay()], val, has: !!entry }
+    const dayLabel = chartRange === 7
+      ? (isZh ? ['日','一','二','三','四','五','六'][d.getDay()] : ['Sun','Mon','Tue','Wed','Thu','Fri','Sat'][d.getDay()])
+      : String(i + 1)
+    return { day: dayLabel, val: entry?.easi_score ?? entry?.severity ?? 0, has: !!entry }
   })
   const trigCounts = {}
   entries.forEach(e => (e.triggers || []).forEach(tr => { trigCounts[tr] = (trigCounts[tr] || 0) + 1 }))
@@ -140,7 +143,6 @@ export default function Insights() {
   return (
     <div style={{ background: th.lightGrey, minHeight: '100vh', fontFamily: "'Lato',sans-serif" }}>
       <div style={{ background: th.green, padding: 'env(safe-area-inset-top, 14px) 20px 20px', paddingTop: 'max(14px, env(safe-area-inset-top))' }}>
-        <img src={LOGO_BASE64} alt="anitch" style={{ height: '22px', width: 'auto', marginBottom: '12px' }} />
         <div style={{ fontSize: '22px', fontWeight: '700', color: 'white', marginBottom: '8px' }}>{t.insights.title}</div>
         <div style={{ fontSize: '11px', color: 'rgba(255,255,255,0.75)', lineHeight: '1.5', background: 'rgba(0,0,0,0.15)', borderRadius: '6px', padding: '8px 12px', border: '1px solid rgba(255,255,255,0.15)' }}>{disclaimer}</div>
       </div>
@@ -189,12 +191,21 @@ export default function Insights() {
 
           {/* Chart */}
           <div style={card}>
-            <span style={cardLabel}>📈 {t.insights.chart}</span>
-            <div style={{ display: 'flex', alignItems: 'flex-end', gap: '4px', height: '90px', marginBottom: '8px' }}>
-              {last14.map((d, i) => (
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '12px' }}>
+              <span style={{ ...cardLabel, marginBottom: 0 }}>{isZh ? '嚴重程度趨勢' : 'Severity trend'}</span>
+              <div style={{ display: 'flex', gap: '3px', background: th.lightGrey, borderRadius: '6px', padding: '3px' }}>
+                {[7, 14, 30].map(r => (
+                  <button key={r} onClick={() => setChartRange(r)} style={{ padding: '3px 9px', borderRadius: '4px', fontSize: '10px', fontWeight: '600', border: 'none', cursor: 'pointer', background: chartRange === r ? th.green : 'transparent', color: chartRange === r ? 'white' : th.textMuted, transition: 'all 0.2s' }}>
+                    {r}{isZh ? '天' : 'd'}
+                  </button>
+                ))}
+              </div>
+            </div>
+            <div style={{ display: 'flex', alignItems: 'flex-end', gap: chartRange === 30 ? '2px' : '4px', height: '90px', marginBottom: '8px' }}>
+              {chartData.map((d, i) => (
                 <div key={i} style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '4px', justifyContent: 'flex-end' }}>
-                  <div style={{ width: '100%', borderRadius: '3px 3px 0 0', height: `${Math.max(3, d.val / 10 * 80)}px`, background: d.val >= 7 ? th.orange : d.val > 0 ? th.green : th.border, opacity: d.has ? 1 : 0.3 }} />
-                  <div style={{ fontSize: '8px', color: th.textMuted, fontWeight: '600' }}>{d.day}</div>
+                  <div style={{ width: '100%', borderRadius: '3px 3px 0 0', height: `${Math.max(3, Math.min(80, (d.val / 16) * 80))}px`, background: d.val >= 16 ? th.orange : d.val > 0 ? th.green : th.border, opacity: d.has ? 1 : 0.3, transition: 'height 0.3s' }} />
+                  <div style={{ fontSize: chartRange === 30 ? '7px' : '8px', color: th.textMuted, fontWeight: '600' }}>{d.day}</div>
                 </div>
               ))}
             </div>
