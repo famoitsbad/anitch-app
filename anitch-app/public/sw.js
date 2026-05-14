@@ -1,4 +1,4 @@
-const CACHE_NAME = 'anitch-v1'
+const CACHE_NAME = 'anitch-v2'
 const STATIC_ASSETS = [
   '/',
   '/index.html',
@@ -55,7 +55,7 @@ self.addEventListener('fetch', event => {
 
 // Push notifications support
 self.addEventListener('push', event => {
-  const data = event.data?.json() || {
+  const data = event.data ? event.data.json() : {
     title: 'Anitch 🌿',
     body: 'Time to log your skin condition today!'
   }

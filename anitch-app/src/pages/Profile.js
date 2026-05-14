@@ -3,13 +3,23 @@ import { supabase } from '../lib/supabase'
 import { useApp } from '../lib/AppContext'
 import { LOGO_BASE64 } from '../lib/logo'
 
+function safeGet(key, fallback = null) {
+  try { return localStorage.getItem(key) ?? fallback } catch { return fallback }
+}
+function safeSet(key, value) {
+  try { localStorage.setItem(key, value) } catch {}
+}
+function safeRemove(key) {
+  try { localStorage.removeItem(key) } catch {}
+}
+
 export default function Profile() {
   const { user, profile, t, th, lang, switchLang, loadProfile, darkMode, toggleDarkMode } = useApp()
   const [saved, setSaved] = useState(false)
   const [editName, setEditName] = useState(profile?.name || '')
   const [savingName, setSavingName] = useState(false)
-  const [notifTime, setNotifTime] = useState(localStorage.getItem('anitch_notif_time') || '20:00')
-  const [notifStatus, setNotifStatus] = useState(localStorage.getItem('anitch_notif_enabled') === 'true' ? 'enabled' : 'idle')
+  const [notifTime, setNotifTime] = useState(safeGet('anitch_notif_time', '20:00'))
+  const [notifStatus, setNotifStatus] = useState(safeGet('anitch_notif_enabled') === 'true' ? 'enabled' : 'idle')
   const [showNotifDialog, setShowNotifDialog] = useState(false)
   const isZh = lang === 'zh'
 
@@ -36,7 +46,7 @@ export default function Profile() {
     next.setHours(h, m, 0, 0)
     if (next <= now) next.setDate(next.getDate() + 1)
     const ms = next - now
-    const existingId = localStorage.getItem('anitch_notif_timeout')
+    const existingId = safeGet('anitch_notif_timeout')
     if (existingId) clearTimeout(parseInt(existingId))
     const id = setTimeout(() => {
       new Notification('Anitch 🌿', {
@@ -45,7 +55,7 @@ export default function Profile() {
       })
       scheduleNotification(time)
     }, ms)
-    localStorage.setItem('anitch_notif_timeout', id.toString())
+    safeSet('anitch_notif_timeout', id.toString())
   }
 
   async function confirmNotifications() {
@@ -77,8 +87,8 @@ export default function Profile() {
     // Already granted — just schedule
     if (Notification.permission === 'granted') {
       scheduleNotification(notifTime)
-      localStorage.setItem('anitch_notif_enabled', 'true')
-      localStorage.setItem('anitch_notif_time', notifTime)
+      safeSet('anitch_notif_enabled', 'true')
+      safeSet('anitch_notif_time', notifTime)
       setNotifStatus('enabled')
       return
     }
@@ -88,8 +98,8 @@ export default function Profile() {
       const permission = await Notification.requestPermission()
       if (permission === 'granted') {
         scheduleNotification(notifTime)
-        localStorage.setItem('anitch_notif_enabled', 'true')
-        localStorage.setItem('anitch_notif_time', notifTime)
+        safeSet('anitch_notif_enabled', 'true')
+        safeSet('anitch_notif_time', notifTime)
         setNotifStatus('enabled')
       } else if (permission === 'denied') {
         setNotifStatus('denied')
@@ -107,10 +117,10 @@ export default function Profile() {
   }
 
   function disableNotifications() {
-    const id = localStorage.getItem('anitch_notif_timeout')
+    const id = safeGet('anitch_notif_timeout')
     if (id) clearTimeout(parseInt(id))
-    localStorage.removeItem('anitch_notif_enabled')
-    localStorage.removeItem('anitch_notif_timeout')
+    safeRemove('anitch_notif_enabled')
+    safeRemove('anitch_notif_timeout')
     setNotifStatus('idle')
   }
 
@@ -249,7 +259,7 @@ export default function Profile() {
               </div>
               <div style={{ display: 'flex', gap: '8px' }}>
                 <input type="time" value={notifTime}
-                  onChange={e => { setNotifTime(e.target.value); localStorage.setItem('anitch_notif_time', e.target.value); scheduleNotification(e.target.value) }}
+                  onChange={e => { setNotifTime(e.target.value); safeSet('anitch_notif_time', e.target.value); scheduleNotification(e.target.value) }}
                   style={{ flex: 1, padding: '10px', border: `1.5px solid ${th.border}`, borderRadius: '8px', fontSize: '16px', fontWeight: '700', color: th.green, background: th.lightGrey, outline: 'none', textAlign: 'center' }} />
                 <button style={{ padding: '10px 14px', background: 'transparent', color: '#C0392B', border: '1.5px solid #C0392B', borderRadius: '8px', fontSize: '13px', fontWeight: '600', cursor: 'pointer', whiteSpace: 'nowrap' }}
                   onClick={disableNotifications}>

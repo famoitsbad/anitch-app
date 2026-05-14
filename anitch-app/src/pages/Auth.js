@@ -19,8 +19,6 @@ export default function Auth({ defaultMode = 'login' }) {
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [name, setName] = useState('')
-  const [ageRange, setAgeRange] = useState('')
-  const [gender, setGender] = useState('')
   const [duration, setDuration] = useState('')
   const [usesAnitch, setUsesAnitch] = useState(null) // null, true, false
   const [anitchProducts, setAnitchProducts] = useState([])
@@ -47,18 +45,18 @@ export default function Auth({ defaultMode = 'login' }) {
     }
   }
 
-  async function handleFinish(skip=false) {
+  async function handleFinish() {
+    if (!duration) { setError(isZh?'請選擇患濕疹時間':'Please select how long you have had eczema'); return }
+    if (usesAnitch === null) { setError(isZh?'請回答是否使用Anitch產品':'Please answer whether you use Anitch products'); return }
     setLoading(true); setError('')
     const { data, error } = await supabase.auth.signUp({ email, password })
     if (error) { setError(error.message); setLoading(false); return }
     if (data.user) {
       await supabase.from('profiles').insert({
         id: data.user.id, name, language: lang,
-        age_range: skip?'':ageRange,
-        gender: skip?'':gender,
-        eczema_duration: skip?'':duration,
-        uses_anitch: skip?null:usesAnitch,
-        anitch_products: skip?[]:anitchProducts,
+        eczema_duration: duration,
+        uses_anitch: usesAnitch,
+        anitch_products: anitchProducts,
       })
     }
     setLoading(false)
@@ -115,27 +113,11 @@ export default function Auth({ defaultMode = 'login' }) {
           {/* STEP 2 — Demographics */}
           {mode==='signup' && step===2 && (
             <>
-              <div style={s.headline}>{isZh?'讓我們更了解您':'Tell us about yourself'}</div>
+              <div style={s.headline}>{isZh?'告訴我們你的濕疹情況':'Tell us about your eczema'}</div>
               <div style={s.subline}>{isZh?'這些資料有助於我們改善您的體驗（可選填）':'Helps us personalise your experience (optional)'}</div>
               <div style={s.form}>
-                {/* Age */}
-                <div style={s.field}>
-                  <label style={s.label}>{isZh?'年齡範圍':'Age Range'}</label>
-                  <div style={s.optGrid}>
-                    {(isZh?AGE_RANGES_ZH:AGE_RANGES_EN).map((a,i)=>(
-                      <div key={a} style={{...s.optBtn,...(ageRange===(isZh?AGE_RANGES_ZH:AGE_RANGES_EN)[i]?s.optActive:{})}} onClick={()=>setAgeRange((isZh?AGE_RANGES_ZH:AGE_RANGES_EN)[i])}>{a}</div>
-                    ))}
-                  </div>
-                </div>
-                {/* Gender */}
-                <div style={s.field}>
-                  <label style={s.label}>{isZh?'性別':'Gender'}</label>
-                  <div style={s.optRow}>
-                    {(isZh?GENDERS_ZH:GENDERS_EN).map(g=>(
-                      <div key={g} style={{...s.optBtn,...(gender===g?s.optActive:{})}} onClick={()=>setGender(g)}>{g}</div>
-                    ))}
-                  </div>
-                </div>
+
+
                 {/* Duration */}
                 <div style={s.field}>
                   <label style={s.label}>{isZh?'患濕疹多久了？':'How long have you had eczema?'}</label>
@@ -166,14 +148,16 @@ export default function Auth({ defaultMode = 'login' }) {
                   </div>
                 )}
                 {error&&<div style={s.error}>{error}</div>}
-                <button style={s.btn} onClick={()=>handleFinish(false)} disabled={loading}>
-                  {loading?'...':(isZh?'開始我的旅程 🌿':'Start My Journey 🌿')}
+                <button style={s.btn} onClick={()=>handleFinish()} disabled={loading}>
+                  {loading?'...':(isZh?'完成註冊 →':'Complete Sign-up →')}
                 </button>
-                <button style={s.skipBtn} onClick={()=>handleFinish(true)}>{isZh?'跳過':'Skip for now'}</button>
               </div>
             </>
           )}
 
+          <div style={{ fontSize: '12px', color: th.textMuted || '#888', textAlign: 'center', marginBottom: '12px', lineHeight: 1.5 }}>
+            {isZh ? '您可以在「個人資料」中填寫年齡及性別（選填）。' : 'You can add age & gender in your Profile anytime (optional).'}
+          </div>
           <div style={s.switchRow}>
             <span style={s.switchText}>{mode==='login'?(isZh?'還沒有帳號？':'No account?'):(isZh?'已有帳號？':'Have an account?')}</span>
             <button style={s.switchBtn} onClick={()=>{setMode(mode==='login'?'signup':'login');setStep(1);setError('')}}>
