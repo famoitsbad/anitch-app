@@ -3,7 +3,7 @@
   "name": "Anitch — Eczema Diary",
   "description": "Your personal eczema companion. Track, understand, heal.",
   "start_url": "/",
-  "display": "browser",
+  "display": "standalone",
   "orientation": "portrait",
   "background_color": "#004B39",
   "theme_color": "#004B39",
