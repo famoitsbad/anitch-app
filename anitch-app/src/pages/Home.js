@@ -69,6 +69,13 @@ export default function Home() {
       : `Welcome back${name ? `, ${name}` : ''}!`
   }
 
+  const last7 = Array.from({ length: 7 }, (_, i) => {
+    const d = new Date()
+    d.setDate(d.getDate() - 6 + i)
+    const ds = d.toISOString().split('T')[0]
+    const entry = entries.find(e => e.date === ds)
+    return { day: t.days[d.getDay()], val: entry?.easi_score ?? entry?.severity ?? 0, has: !!entry }
+  })
 
   const recentDryness = entries.slice(0, 3).some(e => e.symptoms?.includes('dryness'))
   const recentOozing = entries.slice(0, 3).some(e => e.symptoms?.includes('weeping'))
@@ -281,14 +288,18 @@ export default function Home() {
           </div>
         )}
 
-        {/* ── View Insights nudge ── */}
+        {/* ── 7-day chart ── */}
         {entries.length > 0 && (
-          <div style={{ background: th.white, borderRadius: '12px', padding: '12px 16px', marginBottom: '12px', border: `1px solid ${th.border}`, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-            <div>
-              <div style={{ fontSize: '11px', color: th.textMuted }}>{isZh ? '想查看EASI趨勢？' : 'Want to see your EASI trend?'}</div>
-              <div style={{ fontSize: '13px', fontWeight: '700', color: th.green }}>{isZh ? '查看分析 →' : 'View Insights →'}</div>
+          <div style={{ background: th.white, borderRadius: '12px', padding: '16px', marginBottom: '12px', border: `1px solid ${th.border}` }}>
+            <div style={{ fontSize: '10px', fontWeight: '700', letterSpacing: '0.1em', textTransform: 'uppercase', color: th.textMuted, marginBottom: '12px' }}>{t.home.last7}</div>
+            <div style={{ display: 'flex', alignItems: 'flex-end', gap: '6px', height: '72px' }}>
+              {last7.map((d, i) => (
+                <div key={i} style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '4px', justifyContent: 'flex-end' }}>
+                  <div style={{ width: '100%', borderRadius: '3px 3px 0 0', height: `${Math.max(3, Math.min(64, (d.val / 16) * 64))}px`, background: d.val >= 16 ? th.orange : d.val > 0 ? th.green : th.border, opacity: d.has ? 1 : 0.3, transition: 'height 0.3s' }} />
+                  <div style={{ fontSize: '9px', color: th.textMuted, fontWeight: '600' }}>{d.day}</div>
+                </div>
+              ))}
             </div>
-            <div style={{ fontSize: '22px' }}>📊</div>
           </div>
         )}
 
