@@ -281,16 +281,6 @@ export default function Home() {
           </div>
         )}
 
-        {/* ── View Insights nudge ── */}
-        {entries.length > 0 && (
-          <div style={{ background: th.white, borderRadius: '12px', padding: '12px 16px', marginBottom: '12px', border: `1px solid ${th.border}`, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-            <div>
-              <div style={{ fontSize: '11px', color: th.textMuted }}>{isZh ? '想查看EASI趨勢？' : 'Want to see your EASI trend?'}</div>
-              <div style={{ fontSize: '13px', fontWeight: '700', color: th.green }}>{isZh ? '查看分析 →' : 'View Insights →'}</div>
-            </div>
-            <div style={{ fontSize: '22px' }}>📊</div>
-          </div>
-        )}
 
         {/* ── Product tip ── */}
         {productTip && (
