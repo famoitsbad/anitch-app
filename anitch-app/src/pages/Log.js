@@ -2,7 +2,6 @@ import React, { useState, useRef, useCallback } from 'react'
 import { useNavigate, useLocation } from 'react-router-dom'
 import { supabase } from '../lib/supabase'
 import { useApp } from '../lib/AppContext'
-import { LOGO_BASE64 } from '../lib/logo'
 
 // ─── EASI SCORING SYSTEM ────────────────────────────────────────────────────
 // Based on: Eczema Area and Severity Index (EASI) - HOME Foundation Dec 2016
@@ -172,7 +171,8 @@ export default function Log() {
     }, { onConflict: 'user_id,date' })
 
     setSaved(true); setSaving(false)
-    setTimeout(() => navigate('/'), 2500)
+    const timer = setTimeout(() => navigate('/'), 2000)
+    return () => clearTimeout(timer)
   }
 
   const regionLabels = {
@@ -200,8 +200,7 @@ export default function Log() {
   if (saved) return (
     <div style={{ minHeight: '100vh', background: th.green, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '24px' }}>
       <div style={{ background: th.white, borderRadius: '20px', padding: '40px 28px', textAlign: 'center', maxWidth: '320px', width: '100%' }}>
-        <img src={LOGO_BASE64} alt="anitch" style={{ height: '22px', width: 'auto', marginBottom: '20px' }} />
-        <div style={{ fontSize: '40px', margin: '16px 0' }}>🌿</div>
+        <div style={{ fontSize: '48px', margin: '0 0 16px' }}>🌿</div>
         <div style={{ fontSize: '18px', fontWeight: '700', color: th.textPrimary, marginBottom: '10px', lineHeight: '1.4' }}>{thankYouMsg}</div>
         <div style={{ fontSize: '13px', color: th.textMuted }}>{isZh ? '記錄已儲存，正在返回主頁...' : 'Entry saved, returning to home...'}</div>
       </div>
@@ -213,7 +212,7 @@ export default function Log() {
       {/* Header */}
       <div style={{ background: th.green, padding: '14px 20px 24px', paddingTop: 'max(14px, env(safe-area-inset-top))' }}>
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '12px' }}>
-          <img src={LOGO_BASE64} alt="anitch" style={{ height: '22px', width: 'auto' }} />
+          <div />
           <div style={{ fontSize: '11px', color: 'rgba(255,255,255,0.6)' }}>
             {new Date().toLocaleDateString(isZh ? 'zh-TW' : 'en-GB', { day: 'numeric', month: 'short', year: 'numeric' })}
           </div>
@@ -231,7 +230,7 @@ export default function Log() {
         {/* EASI Score Display */}
         <div style={{ ...card, textAlign: 'center', background: th.white }}>
           <div style={{ fontSize: '11px', fontWeight: '700', letterSpacing: '0.12em', textTransform: 'uppercase', color: th.textMuted, marginBottom: '12px' }}>
-            📊 {isZh ? 'EASI 總分' : 'EASI Total Score'}
+            {isZh ? 'EASI 總分' : 'EASI Total Score'}
           </div>
           <div style={{ fontSize: '56px', fontWeight: '900', color: easiColor, lineHeight: 1, marginBottom: '8px', letterSpacing: '-0.02em' }}>
             {easiScore.toFixed(1)}
@@ -264,7 +263,7 @@ export default function Log() {
         {/* EASI Region Tabs */}
         <div style={card}>
           <span style={cardLabel}>
-            🫀 {isZh ? '各部位評估（EASI）' : 'Region Assessment (EASI)'}
+            {isZh ? '各部位評估（EASI）' : 'Region assessment (EASI)'}
           </span>
           <div style={{ fontSize: '11px', color: th.textMuted, marginBottom: '14px', lineHeight: '1.5' }}>
             {isZh
@@ -350,7 +349,7 @@ export default function Log() {
 
         {/* Triggers */}
         <div style={card}>
-          <span style={cardLabel}>🔍 {t.log.triggers}</span>
+          <span style={cardLabel}>{t.log.triggers}</span>
           {[[t.log.food, FOOD_TRIGGERS],[t.log.environment, ENV_TRIGGERS],[t.log.lifestyle, LIFE_TRIGGERS]].map(([label, keys]) => (
             <div key={label} style={{ marginBottom: '14px' }}>
               <div style={{ fontSize: '11px', color: th.textSecondary, fontWeight: '700', marginBottom: '6px' }}>{label}</div>
@@ -365,7 +364,7 @@ export default function Log() {
           {/* Custom triggers */}
           <div style={{ marginBottom: '14px' }}>
             <div style={{ fontSize: '11px', color: th.textSecondary, fontWeight: '700', marginBottom: '6px' }}>
-              ✏️ {isZh ? '自定義誘因' : 'Custom Triggers'}
+              {isZh ? '自定義誘因' : 'Custom triggers'}
             </div>
             {customTriggers.length > 0 && (
               <div style={{ display: 'flex', flexWrap: 'wrap', gap: '6px', marginBottom: '8px' }}>
@@ -386,7 +385,7 @@ export default function Log() {
           </div>
           {/* Skincare */}
           <div>
-            <div style={{ fontSize: '11px', color: th.textSecondary, fontWeight: '700', marginBottom: '6px' }}>🧴 {isZh ? '護膚程序' : 'Skincare Routine'}</div>
+            <div style={{ fontSize: '11px', color: th.textSecondary, fontWeight: '700', marginBottom: '6px' }}>{isZh ? '護膚程序' : 'Skincare routine'}</div>
             <div style={{ display: 'flex', flexWrap: 'wrap', gap: '6px', marginBottom: '8px' }}>
               {skincareProducts.map(p => (
                 <div key={p} style={{ padding: '6px 12px', border: `1.5px solid ${skincareApplied.includes(p) ? th.green : th.border}`, borderRadius: '6px', fontSize: '12px', color: skincareApplied.includes(p) ? th.green : th.textSecondary, cursor: 'pointer', background: skincareApplied.includes(p) ? th.greenLight : th.white, fontWeight: skincareApplied.includes(p) ? '700' : '500' }}
@@ -402,7 +401,7 @@ export default function Log() {
 
         {/* Photo */}
         <div style={card}>
-          <span style={cardLabel}>📸 {t.log.photo}</span>
+          <span style={cardLabel}>{isZh ? '皮膚照片' : 'Skin photo'}</span>
           <div style={{ background: th.greenLight, border: `1px solid ${th.greenSoft}`, borderRadius: '8px', padding: '10px 12px', fontSize: '12px', color: th.greenDark, marginBottom: '12px', lineHeight: '1.5' }}>
             🔒 {isZh ? '私隱聲明：我們不會收集此部分的任何數據。照片只有您本人可以查看，以保護您的私隱。' : 'Privacy Notice: We do not collect any data from this section. Only you can see your photos, to protect your privacy.'}
           </div>
@@ -424,7 +423,7 @@ export default function Log() {
 
         {/* Notes */}
         <div style={card}>
-          <span style={cardLabel}>✍️ {t.log.notes}</span>
+          <span style={cardLabel}>{isZh ? '今日備注' : 'Notes for today'}</span>
           <textarea style={{ width: '100%', border: `1.5px solid ${th.border}`, borderRadius: '8px', padding: '12px', fontSize: '13px', color: th.textPrimary, resize: 'none', height: '80px', outline: 'none', background: th.lightGrey, fontFamily: "'Lato',sans-serif" }}
             placeholder={t.log.notesPlaceholder} value={notes} onChange={e => setNotes(e.target.value)} />
         </div>

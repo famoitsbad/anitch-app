@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react'
 import { supabase } from '../lib/supabase'
 import { useApp } from '../lib/AppContext'
+import { LOGO_BASE64 } from '../lib/logo'
 
 export default function History() {
   const { user, t, th, lang } = useApp()
@@ -149,7 +150,7 @@ export default function History() {
     const photosWithEntries = entries.filter(e => photoUrls[e.id])
     return (
       <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.85)', zIndex: 200, display: 'flex', flexDirection: 'column' }}>
-        <div style={{ background: th.green, paddingTop: `calc(env(safe-area-inset-top, 0px) + 16px)`, paddingLeft: '20px', paddingRight: '20px', paddingBottom: '14px', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+        <div style={{ background: th.green, padding: 'env(safe-area-inset-top, 14px) 20px 14px', paddingTop: 'max(14px, env(safe-area-inset-top))', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
           <div style={{ color: 'white', fontWeight: '700', fontSize: '16px' }}>{isZh ? '前後對比' : 'Before & After'}</div>
           <button style={{ background: 'none', border: 'none', color: 'white', fontSize: '18px', cursor: 'pointer' }} onClick={() => { setCompareMode(false); setCompareA(null); setCompareB(null) }}>✕</button>
         </div>
@@ -186,7 +187,7 @@ export default function History() {
     )
   }
 
-  if (loading) return <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: '100vh', background: '#004B39' }}><div style={{ color: 'white', fontSize: '16px', fontFamily: "'Lato',sans-serif" }}>Loading…</div></div>
+  if (loading) return <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: '100vh', background: '#004B39' }}><img src={LOGO_BASE64} alt="anitch" style={{ height: '28px' }} /></div>
 
   const photosCount = entries.filter(e => photoUrls[e.id]).length
 
@@ -195,7 +196,8 @@ export default function History() {
       {compareMode && <CompareView />}
       {selectedEntry && <EntryDetail entry={selectedEntry} onClose={() => setSelectedEntry(null)} />}
 
-      <div style={{ background: th.green, paddingTop: `calc(env(safe-area-inset-top, 0px) + 16px)`, paddingLeft: '20px', paddingRight: '20px', paddingBottom: '24px' }}>
+      <div style={{ background: th.green, padding: 'env(safe-area-inset-top, 14px) 20px 24px', paddingTop: 'max(14px, env(safe-area-inset-top))' }}>
+        <img src={LOGO_BASE64} alt="anitch" style={{ height: '22px', width: 'auto', marginBottom: '12px' }} />
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
           <div>
             <div style={{ fontSize: '22px', fontWeight: '700', color: 'white', marginBottom: '4px' }}>{t.history.title}</div>
