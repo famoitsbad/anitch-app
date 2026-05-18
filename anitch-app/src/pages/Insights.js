@@ -1,12 +1,13 @@
 import React, { useEffect, useState } from 'react'
 import { supabase } from '../lib/supabase'
 import { useApp } from '../lib/AppContext'
+import { LOGO_BASE64 } from '../lib/logo'
 
 export default function Insights() {
   const { user, t, th, lang } = useApp()
   const [entries, setEntries] = useState([])
   const [loading, setLoading] = useState(true)
-  const [chartRange, setChartRange] = useState(7)
+  const [chartWindow, setChartWindow] = useState(14) // 7 | 14 | 30
   const isZh = lang === 'zh'
 
   useEffect(() => { loadEntries() }, [user])
@@ -112,7 +113,7 @@ export default function Insights() {
     return insights
   }
 
-  if (loading) return <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: '100vh', background: '#004B39' }}><div style={{ color: 'white', fontSize: '16px', fontFamily: "'Lato',sans-serif" }}>Loading…</div></div>
+  if (loading) return <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: '100vh', background: '#004B39' }}><img src={LOGO_BASE64} alt="anitch" style={{ height: '28px' }} /></div>
 
   const insights = generateInsights()
   // Use EASI score if available, otherwise fall back to normalized severity
@@ -120,15 +121,13 @@ export default function Insights() {
   const avg = entries.length ? (entries.reduce((s, e) => s + getScore(e), 0) / entries.length).toFixed(1) : '—'
   const avgLabel = entries.some(e => e.easi_score !== undefined) ? `${avg} / 72` : avg
   const flares = entries.filter(e => e.easi_score !== undefined ? e.easi_score >= 16 : e.severity >= 6).length
-  const chartData = Array.from({ length: chartRange }, (_, i) => {
-    const d = new Date()
-    d.setDate(d.getDate() - (chartRange - 1) + i)
+  const chartDays = Array.from({ length: chartWindow }, (_, i) => {
+    const d = new Date(); d.setDate(d.getDate() - (chartWindow - 1) + i)
     const ds = d.toISOString().split('T')[0]
     const entry = entries.find(e => e.date === ds)
-    const dayLabel = chartRange === 7
-      ? (isZh ? ['日','一','二','三','四','五','六'][d.getDay()] : ['Sun','Mon','Tue','Wed','Thu','Fri','Sat'][d.getDay()])
-      : String(i + 1)
-    return { day: dayLabel, val: entry?.easi_score ?? entry?.severity ?? 0, has: !!entry }
+    const val = entry ? (entry.easi_score !== undefined ? entry.easi_score / 72 * 9 : entry.severity) : 0
+    const label = chartWindow <= 14 ? `${d.getMonth()+1}/${d.getDate()}` : t.days[d.getDay()]
+    return { label, val, has: !!entry, score: entry?.easi_score ?? (entry ? entry.severity : null) }
   })
   const trigCounts = {}
   entries.forEach(e => (e.triggers || []).forEach(tr => { trigCounts[tr] = (trigCounts[tr] || 0) + 1 }))
@@ -137,12 +136,29 @@ export default function Insights() {
   entries.forEach(e => (e.skincare_applied || []).forEach(p => { skincareCounts[p] = (skincareCounts[p] || 0) + 1 }))
   const topSkincare = Object.entries(skincareCounts).sort((a, b) => b[1] - a[1]).slice(0, 4)
 
+  const SKINCARE_ZH = {
+    'Moisturiser': '保濕霜',
+    'Serum': '精華液',
+    'Toner': '爽膚水',
+    'Sunscreen': '防曬霜',
+    'Barrier Rescue Balm': '屏障急救軟膏',
+    'Barrier Restore Face Cream': '屏障修復面霜',
+    'Barrier Repair Body Cream': '屏障修復身體乳霜',
+    'Spot treatment': '局部護理',
+    'Steroid cream': '類固醇藥膏',
+  }
+  function skincareLabel(name) {
+    if (!isZh) return name
+    return SKINCARE_ZH[name] || name
+  }
+
   const card = { background: th.white, borderRadius: '12px', padding: '16px', marginBottom: '12px', boxShadow: `0 1px 4px ${th.shadow}`, border: `1px solid ${th.border}` }
   const cardLabel = { fontSize: '10px', fontWeight: '700', letterSpacing: '0.12em', textTransform: 'uppercase', color: th.textMuted, marginBottom: '12px', display: 'block' }
 
   return (
     <div style={{ background: th.lightGrey, minHeight: '100vh', fontFamily: "'Lato',sans-serif" }}>
-      <div style={{ background: th.green, paddingTop: `calc(env(safe-area-inset-top, 0px) + 16px)`, paddingLeft: '20px', paddingRight: '20px', paddingBottom: '20px' }}>
+      <div style={{ background: th.green, padding: 'env(safe-area-inset-top, 14px) 20px 20px', paddingTop: 'max(14px, env(safe-area-inset-top))' }}>
+        <img src={LOGO_BASE64} alt="anitch" style={{ height: '22px', width: 'auto', marginBottom: '12px' }} />
         <div style={{ fontSize: '22px', fontWeight: '700', color: 'white', marginBottom: '8px' }}>{t.insights.title}</div>
         <div style={{ fontSize: '11px', color: 'rgba(255,255,255,0.75)', lineHeight: '1.5', background: 'rgba(0,0,0,0.15)', borderRadius: '6px', padding: '8px 12px', border: '1px solid rgba(255,255,255,0.15)' }}>{disclaimer}</div>
       </div>
@@ -189,31 +205,39 @@ export default function Insights() {
             </div>
           )}
 
-          {/* Chart */}
+          {/* Combined trend chart — 7/14/30 toggle */}
           <div style={card}>
-            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '12px' }}>
-              <span style={{ ...cardLabel, marginBottom: 0 }}>{isZh ? '嚴重程度趨勢' : 'Severity trend'}</span>
-              <div style={{ display: 'flex', gap: '3px', background: th.lightGrey, borderRadius: '6px', padding: '3px' }}>
-                {[7, 14, 30].map(r => (
-                  <button key={r} onClick={() => setChartRange(r)} style={{ padding: '3px 9px', borderRadius: '4px', fontSize: '10px', fontWeight: '600', border: 'none', cursor: 'pointer', background: chartRange === r ? th.green : 'transparent', color: chartRange === r ? 'white' : th.textMuted, transition: 'all 0.2s' }}>
-                    {r}{isZh ? '天' : 'd'}
-                  </button>
-                ))}
-              </div>
-            </div>
-            <div style={{ display: 'flex', alignItems: 'flex-end', gap: chartRange === 30 ? '2px' : '4px', height: '90px', marginBottom: '8px' }}>
-              {chartData.map((d, i) => (
-                <div key={i} style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '4px', justifyContent: 'flex-end' }}>
-                  <div style={{ width: '100%', borderRadius: '3px 3px 0 0', height: `${Math.max(3, Math.min(80, (d.val / 16) * 80))}px`, background: d.val >= 16 ? th.orange : d.val > 0 ? th.green : th.border, opacity: d.has ? 1 : 0.3, transition: 'height 0.3s' }} />
-                  <div style={{ fontSize: chartRange === 30 ? '7px' : '8px', color: th.textMuted, fontWeight: '600' }}>{d.day}</div>
+            <span style={cardLabel}>📈 {isZh ? '嚴重程度趨勢' : 'Severity Trend'}</span>
+            {/* Toggle buttons */}
+            <div style={{ display: 'flex', gap: '6px', marginBottom: '12px' }}>
+              {[7, 14, 30].map(w => (
+                <div key={w} onClick={() => setChartWindow(w)} style={{
+                  flex: 1, textAlign: 'center', padding: '6px 0', borderRadius: '6px', fontSize: '12px', fontWeight: chartWindow === w ? '700' : '500', cursor: 'pointer',
+                  background: chartWindow === w ? th.green : th.white,
+                  color: chartWindow === w ? 'white' : th.textMuted,
+                  border: `1.5px solid ${chartWindow === w ? th.green : th.border}`,
+                }}>
+                  {isZh ? `${w}天` : `${w}d`}
                 </div>
               ))}
             </div>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
+            {/* Bars */}
+            <div style={{ display: 'flex', alignItems: 'flex-end', gap: chartWindow <= 14 ? '4px' : '2px', height: '90px', marginBottom: '8px' }}>
+              {chartDays.map((d, i) => (
+                <div key={i} style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '3px', justifyContent: 'flex-end' }}>
+                  <div style={{ width: '100%', borderRadius: '3px 3px 0 0', height: `${Math.max(3, d.val / 10 * 80)}px`, background: d.val >= 7 ? th.orange : d.val > 0 ? th.green : th.border, opacity: d.has ? 1 : 0.25, transition: 'height 0.3s' }} />
+                  {chartWindow <= 14 && <div style={{ fontSize: '7px', color: th.textMuted, fontWeight: '600', whiteSpace: 'nowrap' }}>{d.label}</div>}
+                </div>
+              ))}
+            </div>
+            {/* Legend */}
+            <div style={{ display: 'flex', alignItems: 'center', gap: '4px', flexWrap: 'wrap' }}>
               <span style={{ display: 'inline-block', width: '8px', height: '8px', borderRadius: '2px', background: th.green, marginRight: '4px' }} />
-              <span style={{ fontSize: '10px', color: th.textMuted, marginRight: '12px' }}>{isZh ? '輕微' : 'Low'}</span>
+              <span style={{ fontSize: '10px', color: th.textMuted, marginRight: '12px' }}>{isZh ? '輕微 (EASI<7)' : 'Mild (EASI<7)'}</span>
               <span style={{ display: 'inline-block', width: '8px', height: '8px', borderRadius: '2px', background: th.orange, marginRight: '4px' }} />
-              <span style={{ fontSize: '10px', color: th.textMuted }}>{isZh ? '發作' : 'Flare'}</span>
+              <span style={{ fontSize: '10px', color: th.textMuted, marginRight: '12px' }}>{isZh ? '中度及以上' : 'Moderate+'}</span>
+              <span style={{ display: 'inline-block', width: '8px', height: '8px', borderRadius: '2px', background: th.border, marginRight: '4px' }} />
+              <span style={{ fontSize: '10px', color: th.textMuted }}>{isZh ? '未記錄' : 'No log'}</span>
             </div>
           </div>
 

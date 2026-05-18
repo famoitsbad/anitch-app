@@ -69,14 +69,15 @@ export default function Home() {
       : `Welcome back${name ? `, ${name}` : ''}!`
   }
 
+
   const recentDryness = entries.slice(0, 3).some(e => e.symptoms?.includes('dryness'))
   const recentOozing = entries.slice(0, 3).some(e => e.symptoms?.includes('weeping'))
   function getProductTip() {
     if (recentOozing) return isZh
-      ? '根據您近期的記錄，Anitch Barrier Rescue Balm 可能特別適合您現在的皮膚狀況。'
+      ? '根據您近期的記錄，Anitch 屏障急救軟膏 可能特別適合您現在的皮膚狀況。'
       : 'Based on your recent logs, Anitch Barrier Rescue Balm may be especially suitable for your current skin condition.'
     if (recentDryness) return isZh
-      ? '您近期記錄顯示皮膚較乾燥，Anitch Barrier Restore Face Cream 或 Barrier Repair Body Cream 可提供深層保濕。'
+      ? '您近期記錄顯示皮膚較乾燥，Anitch 屏障修復面霜 或 屏障修復身體乳霜 可提供深層保濕。'
       : 'Your recent logs show dryness. Anitch Barrier Restore Face Cream or Barrier Repair Body Cream may help with deep hydration.'
     return null
   }
@@ -115,7 +116,7 @@ export default function Home() {
     <div style={{ background: th.lightGrey, minHeight: '100vh', fontFamily: "'Lato',sans-serif", paddingBottom: '100px' }}>
 
       {/* ── Header — no logo ── */}
-      <div style={{ background: th.green, paddingTop: `calc(env(safe-area-inset-top, 0px) + 16px)`, paddingLeft: '20px', paddingRight: '20px', paddingBottom: '16px' }}>
+      <div style={{ background: th.green, paddingTop: 'max(14px, env(safe-area-inset-top))', paddingLeft: '20px', paddingRight: '20px', paddingBottom: '16px' }}>
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
           <div>
             <div style={{ fontSize: '20px', fontWeight: '700', color: 'white', lineHeight: '1.25' }}>{getGreeting()}</div>
@@ -277,6 +278,17 @@ export default function Home() {
                 </div>
               </React.Fragment>
             ))}
+          </div>
+        )}
+
+        {/* ── View Insights nudge ── */}
+        {entries.length > 0 && (
+          <div style={{ background: th.white, borderRadius: '12px', padding: '12px 16px', marginBottom: '12px', border: `1px solid ${th.border}`, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+            <div>
+              <div style={{ fontSize: '11px', color: th.textMuted }}>{isZh ? '想查看EASI趨勢？' : 'Want to see your EASI trend?'}</div>
+              <div style={{ fontSize: '13px', fontWeight: '700', color: th.green }}>{isZh ? '查看分析 →' : 'View Insights →'}</div>
+            </div>
+            <div style={{ fontSize: '22px' }}>📊</div>
           </div>
         )}
 

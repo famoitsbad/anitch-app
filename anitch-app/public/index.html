@@ -53,14 +53,6 @@
     #root { min-height: 100vh; min-height: -webkit-fill-available; }
     /* iOS safe area support */
     #root { padding-bottom: env(safe-area-inset-bottom); }
-    /* Ensure status bar never overlaps content on any device */
-    :root {
-      --sat: env(safe-area-inset-top, 0px);
-      --sar: env(safe-area-inset-right, 0px);
-      --sab: env(safe-area-inset-bottom, 0px);
-      --sal: env(safe-area-inset-left, 0px);
-      --header-top: max(16px, calc(env(safe-area-inset-top, 0px) + 16px));
-    }
   </style>
 </head>
 <body>

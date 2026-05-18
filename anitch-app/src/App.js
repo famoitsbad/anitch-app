@@ -9,7 +9,6 @@ import Insights from './pages/Insights'
 import Profile from './pages/Profile'
 import BottomNav from './components/BottomNav'
 import { LOGO_BASE64 } from './lib/logo'
-import { PageErrorBoundary, AppErrorBoundary } from './components/ErrorBoundary'
 
 function SplashScreen() {
   const [dot, setDot] = useState(0)
@@ -32,42 +31,18 @@ function SplashScreen() {
 }
 
 function AppInner() {
-  const { user, loading, lang } = useApp()
+  const { user, loading } = useApp()
   if (loading) return <SplashScreen />
-  if (!user) return (
-    <PageErrorBoundary pageName="Login" lang={lang}>
-      <Auth />
-    </PageErrorBoundary>
-  )
+  if (!user) return <Auth />
   return (
     <BrowserRouter>
       <div style={{ background:'#F9F9FB', minHeight:'100vh', maxWidth:'500px', margin:'0 auto', position:'relative' }}>
         <Routes>
-          <Route path="/" element={
-            <PageErrorBoundary pageName="Home" lang={lang}>
-              <Home />
-            </PageErrorBoundary>
-          } />
-          <Route path="/log" element={
-            <PageErrorBoundary pageName="Log" lang={lang}>
-              <Log />
-            </PageErrorBoundary>
-          } />
-          <Route path="/history" element={
-            <PageErrorBoundary pageName="History" lang={lang}>
-              <History />
-            </PageErrorBoundary>
-          } />
-          <Route path="/insights" element={
-            <PageErrorBoundary pageName="Insights" lang={lang}>
-              <Insights />
-            </PageErrorBoundary>
-          } />
-          <Route path="/profile" element={
-            <PageErrorBoundary pageName="Profile" lang={lang}>
-              <Profile />
-            </PageErrorBoundary>
-          } />
+          <Route path="/" element={<Home />} />
+          <Route path="/log" element={<Log />} />
+          <Route path="/history" element={<History />} />
+          <Route path="/insights" element={<Insights />} />
+          <Route path="/profile" element={<Profile />} />
         </Routes>
         <BottomNav />
       </div>
@@ -76,11 +51,5 @@ function AppInner() {
 }
 
 export default function App() {
-  return (
-    <AppErrorBoundary>
-      <AppProvider>
-        <AppInner />
-      </AppProvider>
-    </AppErrorBoundary>
-  )
+  return <AppProvider><AppInner /></AppProvider>
 }
