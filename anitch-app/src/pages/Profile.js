@@ -21,21 +21,11 @@ export default function Profile() {
     setSaved(true); setTimeout(() => setSaved(false), 2000)
   }
 
-  async function saveSettings() {
-    await supabase.from('profiles').upsert({ id: user.id, language: lang })
-    setSaved(true); setTimeout(() => setSaved(false), 2000)
-  }
-
-
-
-
   const card = { background: th.white, borderRadius: '12px', padding: '16px', marginBottom: '12px', boxShadow: `0 1px 4px ${th.shadow}`, border: `1px solid ${th.border}` }
   const cardLabel = { fontSize: '10px', fontWeight: '700', letterSpacing: '0.12em', textTransform: 'uppercase', color: th.textMuted, marginBottom: '12px', display: 'block' }
 
   return (
     <div style={{ background: th.lightGrey, minHeight: '100vh', fontFamily: "'Lato',sans-serif" }}>
-                style={{ width: '100%', padding: '12px 14px', border: `1.5px solid ${th.border}`, borderRadius: '8px', fontSize: '20px', fontWeight: '700', color: th.green, background: th.lightGrey, outline: 'none', textAlign: 'center', fontFamily: "'Lato',sans-serif" }}
-
 
       <div style={{ background: th.green, padding: 'env(safe-area-inset-top, 14px) 20px 24px', paddingTop: 'max(14px, env(safe-area-inset-top))' }}>
         <img src={LOGO_BASE64} alt="anitch" style={{ height: '22px', width: 'auto', marginBottom: '12px' }} />
@@ -43,7 +33,7 @@ export default function Profile() {
       </div>
 
       <div style={{ padding: '14px 14px 120px' }}>
-        {/* User card */}
+
         <div style={{ ...card, display: 'flex', alignItems: 'center', gap: '14px' }}>
           <div style={{ width: '48px', height: '48px', borderRadius: '50%', background: th.green, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '18px', fontWeight: '800', color: 'white', flexShrink: 0 }}>
             {profile?.name ? profile.name[0].toUpperCase() : 'A'}
@@ -54,7 +44,6 @@ export default function Profile() {
           </div>
         </div>
 
-        {/* Change Name */}
         <div style={card}>
           <span style={cardLabel}>✏️ {isZh ? '更改名字' : 'Change Name'}</span>
           <div style={{ display: 'flex', gap: '8px' }}>
@@ -65,9 +54,9 @@ export default function Profile() {
               {savingName ? '...' : (isZh ? '儲存' : 'Save')}
             </button>
           </div>
+          {saved && <div style={{ fontSize: '12px', color: th.green, marginTop: '8px' }}>✓ {isZh ? '已儲存' : 'Saved!'}</div>}
         </div>
 
-        {/* Language */}
         <div style={card}>
           <span style={cardLabel}>🌍 {t.profile.language}</span>
           <div style={{ display: 'flex', gap: '10px' }}>
@@ -79,7 +68,6 @@ export default function Profile() {
           </div>
         </div>
 
-        {/* Dark Mode */}
         <div style={card}>
           <span style={cardLabel}>🌙 {isZh ? '夜間模式' : 'Dark Mode'}</span>
           <div style={{ fontSize: '12px', color: th.textMuted, marginBottom: '12px', lineHeight: '1.5' }}>
@@ -95,7 +83,6 @@ export default function Profile() {
           </div>
         </div>
 
-        {/* Anitch brand info */}
         <div style={{ ...card, textAlign: 'center' }}>
           <img src={LOGO_BASE64} alt="anitch" style={{ height: '20px', width: 'auto', marginBottom: '10px' }} />
           <div style={{ fontSize: '10px', fontWeight: '700', letterSpacing: '0.15em', color: th.green, textTransform: 'uppercase', marginBottom: '10px' }}>
@@ -105,10 +92,12 @@ export default function Profile() {
             {isZh ? 'Anitch® 是一個以科學為基礎的濕疹護膚品牌，致力於改善濕疹患者的生活質量。' : 'Anitch® is a science-driven eczema skincare brand dedicated to improving the lives of those with eczema-prone skin.'}
           </div>
           <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', marginBottom: '16px' }}>
-            <a href="https://www.anitch.com/zh" target="_blank" rel="noopener noreferrer" style={{ display: 'block', padding: '10px 16px', background: th.greenLight, color: th.green, borderRadius: '8px', fontSize: '13px', fontWeight: '700', textDecoration: 'none', border: `1px solid ${th.greenSoft}` }}>
+            <a href="https://www.anitch.com/zh" target="_blank" rel="noopener noreferrer"
+              style={{ display: 'block', padding: '10px 16px', background: th.greenLight, color: th.green, borderRadius: '8px', fontSize: '13px', fontWeight: '700', textDecoration: 'none', border: `1px solid ${th.greenSoft}` }}>
               🌐 {isZh ? '官方網站' : 'Official Website'}
             </a>
-            <a href="https://www.instagram.com/anitch.hk/" target="_blank" rel="noopener noreferrer" style={{ display: 'block', padding: '10px 16px', background: th.greenLight, color: th.green, borderRadius: '8px', fontSize: '13px', fontWeight: '700', textDecoration: 'none', border: `1px solid ${th.greenSoft}` }}>
+            <a href="https://www.instagram.com/anitch.hk/" target="_blank" rel="noopener noreferrer"
+              style={{ display: 'block', padding: '10px 16px', background: th.greenLight, color: th.green, borderRadius: '8px', fontSize: '13px', fontWeight: '700', textDecoration: 'none', border: `1px solid ${th.greenSoft}` }}>
               📸 @anitch.hk
             </a>
           </div>
@@ -117,11 +106,11 @@ export default function Profile() {
 
         <div style={{ height: '1px', background: th.border, margin: '8px 0 14px' }} />
 
-        {/* Logout last */}
         <button style={{ width: '100%', background: 'transparent', color: '#C0392B', border: '1.5px solid #C0392B', borderRadius: '8px', padding: '14px', fontSize: '14px', fontWeight: '700', cursor: 'pointer', marginBottom: '12px', letterSpacing: '0.04em' }}
           onClick={handleLogout}>
           🚪 {t.profile.logout}
         </button>
+
       </div>
     </div>
   )
